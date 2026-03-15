@@ -697,6 +697,71 @@ def api_status():
     })
 
 
+@app.get("/api/setup/status")
+def api_setup_status():
+    """Returns which setup steps are complete."""
+    import json as _json
+
+    # Step 1: Google OAuth credentials file
+    secrets_ok = False
+    try:
+        with open(SECRETS_FILE, "r", encoding="utf-8") as f:
+            d = _json.load(f)
+        inner = d.get("installed") or d.get("web") or {}
+        secrets_ok = bool(inner.get("client_id", "").strip())
+    except Exception:
+        pass
+
+    # Step 2: Content API key (required)
+    content_ok = bool((sm_module.get("content.api_key") or "").strip())
+
+    # Step 3: TTS key (optional — done if disabled or key present)
+    tts_enabled = sm_module.get("tts.enabled", True)
+    tts_ok = (not tts_enabled) or bool((sm_module.get("tts.api_key") or "").strip())
+
+    # Step 4: Stock video key (optional — done if disabled, local, or key present)
+    stock_enabled  = sm_module.get("stock_video.enabled", True)
+    stock_provider = sm_module.get("stock_video.provider", "pexels")
+    if stock_provider == "pexels":
+        stock_ok = (not stock_enabled) or bool((sm_module.get("stock_video.pexels_api_key") or "").strip())
+    elif stock_provider == "pixabay":
+        stock_ok = (not stock_enabled) or bool((sm_module.get("stock_video.pixabay_api_key") or "").strip())
+    else:
+        stock_ok = True
+
+    required_complete = secrets_ok and content_ok
+    return jsonify({
+        "complete": required_complete and tts_ok and stock_ok,
+        "required_complete": required_complete,
+        "steps": {
+            "google_oauth": {
+                "done": secrets_ok,
+                "required": True,
+                "label": "Google OAuth credentials",
+                "description": "client_secrets.json with valid client_id",
+            },
+            "content_key": {
+                "done": content_ok,
+                "required": True,
+                "label": "Content API key",
+                "description": "Anthropic / OpenAI / Gemini key for video content",
+            },
+            "tts_key": {
+                "done": tts_ok,
+                "required": False,
+                "label": "TTS API key",
+                "description": "ElevenLabs or OpenAI key for voiceover (optional)",
+            },
+            "stock_key": {
+                "done": stock_ok,
+                "required": False,
+                "label": "Stock video key",
+                "description": "Pexels or Pixabay key for background video (optional)",
+            },
+        },
+    })
+
+
 @app.get("/api/schedules")
 def api_schedules_list():
     with _schedules_lock:

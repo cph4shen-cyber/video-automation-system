@@ -225,6 +225,20 @@
     .test-result { font-size:10px; margin-top:4px; padding:4px 8px; }
     .test-ok  { background:#14532d; color:var(--green); }
     .test-err { background:#450a0a; color:var(--red); }
+
+    /* Setup banner */
+    #setup-banner { display:none; background:#1a0f00; border-bottom:1px solid #92400e; padding:8px 16px; flex-shrink:0; }
+    #setup-banner.visible { display:block; }
+    .setup-banner-hdr { display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+    .setup-banner-title { color:#fbbf24; font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; flex:1; }
+    .setup-banner-dismiss { background:none; border:none; color:var(--muted); font-size:11px; cursor:pointer; padding:2px 6px; }
+    .setup-banner-dismiss:hover { color:#e4e4e7; }
+    .setup-steps { display:flex; gap:16px; flex-wrap:wrap; }
+    .setup-step { display:flex; align-items:center; gap:5px; font-size:11px; }
+    .setup-step.done .setup-step-text { color:#4ade80; }
+    .setup-step.missing-required .setup-step-text { color:#f87171; }
+    .setup-step.missing-optional .setup-step-text { color:#fbbf24; }
+    .setup-step-link { color:var(--accent); text-decoration:underline; cursor:pointer; margin-left:4px; }
   </style>
 </head>
 <body>
@@ -247,6 +261,15 @@
   <button class="tab-btn" onclick="setTab(this,'col-drafts')">DRAFTS</button>
   <button class="tab-btn" onclick="setTab(this,'col-videos')">VIDEOS</button>
   <button class="tab-btn" onclick="setTab(this,'col-settings')">SETTINGS</button>
+</div>
+
+<!-- SETUP BANNER -->
+<div id="setup-banner">
+  <div class="setup-banner-hdr">
+    <span class="setup-banner-title">&#9888; Setup required</span>
+    <button class="setup-banner-dismiss" onclick="dismissSetupBanner()">&#10005;</button>
+  </div>
+  <div class="setup-steps" id="setup-steps-list"></div>
 </div>
 
 <!-- MAIN LAYOUT -->
@@ -982,6 +1005,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   loadDrafts();
   pollStatus();
   startSSE();
+  checkSetupStatus();
   setInterval(pollStatus, 3000);
   setInterval(()=>{ if(_countdownSecs>0) _countdownSecs--; }, 1000);
   setInterval(loadChannels, 120000);
@@ -1917,6 +1941,46 @@ function updateScheduleChannel(scheduleId, channelId) {
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify({channel_id: channelId || null}),
   }).catch(() => {});
+}
+
+// ── Setup Banner ──────────────────────────────────────────────────────────────
+let _setupDismissed = false;
+
+async function checkSetupStatus() {
+  if (_setupDismissed) return;
+  try {
+    const r = await fetch('/api/setup/status');
+    if (!r.ok) return;
+    const d = await r.json();
+    if (d.required_complete) {
+      document.getElementById('setup-banner').classList.remove('visible');
+      return;
+    }
+    renderSetupBanner(d.steps);
+    document.getElementById('setup-banner').classList.add('visible');
+  } catch(_) {}
+}
+
+function renderSetupBanner(steps) {
+  const list = document.getElementById('setup-steps-list');
+  const settingsBtn = document.querySelector('#tabs-bar .tab-btn:last-child');
+  list.innerHTML = Object.entries(steps).map(([key, step]) => {
+    const cls   = step.done ? 'done' : step.required ? 'missing-required' : 'missing-optional';
+    const icon  = step.done ? '✓' : step.required ? '✗' : '○';
+    const opt   = step.required ? '' : ' <span style="color:var(--muted)">(optional)</span>';
+    const link  = !step.done
+      ? `<span class="setup-step-link" onclick="setTab(document.querySelector('#tabs-bar .tab-btn:last-child'),'col-settings')">Configure →</span>`
+      : '';
+    return `<div class="setup-step ${cls}">
+      <span>${icon}</span>
+      <span class="setup-step-text">${escHtml(step.label)}${opt}</span>${link}
+    </div>`;
+  }).join('');
+}
+
+function dismissSetupBanner() {
+  _setupDismissed = true;
+  document.getElementById('setup-banner').classList.remove('visible');
 }
 </script>
 </body>
