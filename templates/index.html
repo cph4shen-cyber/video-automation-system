@@ -1,0 +1,1923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Video Automation System — Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { accent: '#d97706' },
+          fontFamily: { sans: ['Roboto', 'sans-serif'] },
+          borderRadius: { DEFAULT: '0', sm: '0', md: '0', lg: '0', xl: '0', '2xl': '0' }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap');
+    :root { --bg:#09090b; --card:#18181b; --border:#27272a; --accent:#d97706; --green:#22c55e; --red:#ef4444; --yellow:#eab308; --muted:#71717a; }
+    * { box-sizing:border-box; }
+    body { background:var(--bg); color:#e4e4e7; font-family:'Roboto',sans-serif; margin:0; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+    ::-webkit-scrollbar { width:5px; } ::-webkit-scrollbar-track { background:var(--bg); } ::-webkit-scrollbar-thumb { background:var(--border); }
+
+    #top-strip { background:var(--card); border-bottom:2px solid var(--accent); padding:7px 16px; display:flex; align-items:center; gap:14px; flex-shrink:0; z-index:100; }
+    #channel-name { color:var(--accent); font-weight:700; font-size:14px; letter-spacing:.04em; }
+    .strip-sep { color:var(--border); font-size:16px; }
+    .strip-info { color:#a1a1aa; font-size:11px; }
+    #btn-new-video { background:var(--accent); color:#000; padding:5px 14px; font-size:11px; font-weight:700; border:none; cursor:pointer; margin-left:auto; }
+    #btn-new-video:hover { background:#b45309; }
+
+    #tabs-bar { background:var(--card); border-bottom:1px solid var(--border); padding:0 16px; display:flex; align-items:center; gap:4px; height:36px; flex-shrink:0; }
+    .tab-btn { background:none; border:none; border-bottom:2px solid transparent; color:var(--muted); font-size:11px; font-weight:700; letter-spacing:.08em; padding:0 14px; height:100%; cursor:pointer; transition:color .15s, border-color .15s; }
+    .tab-btn:hover { color:#e4e4e7; }
+    .tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+    #columns { display:grid; grid-template-columns:1fr 340px; flex:1; overflow:hidden; }
+    #main-panel { display:flex; flex-direction:column; overflow:hidden; border-right:1px solid var(--border); }
+    .col { border-right:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; }
+    .col:last-child { border-right:none; }
+
+    .panel-hdr { background:var(--card); border-bottom:1px solid var(--border); padding:6px 12px; display:flex; align-items:center; gap:8px; flex-shrink:0; }
+    .panel-title { color:var(--accent); font-size:10px; font-weight:700; letter-spacing:1.5px; }
+    .panel-badge { padding:1px 6px; font-size:9px; font-weight:700; }
+    .pb-muted  { background:var(--border); color:var(--muted); }
+    .pb-accent { background:var(--accent); color:#000; }
+    .pb-green  { background:#14532d; color:var(--green); }
+    .pb-red    { background:#450a0a; color:var(--red); }
+    .pb-yellow { background:#422006; color:var(--yellow); }
+
+    .panel-body { padding:10px 12px; overflow-y:auto; flex:1; }
+
+    .f-label { color:var(--muted); font-size:10px; display:block; margin-bottom:3px; letter-spacing:.05em; text-transform:uppercase; }
+    .f-input { background:var(--bg); border:1px solid var(--border); color:#e4e4e7; padding:5px 8px; font-size:12px; width:100%; font-family:'Roboto',sans-serif; outline:none; }
+    .f-input:focus { border-color:var(--accent); }
+    .f-textarea { background:var(--bg); border:1px solid var(--border); color:#e4e4e7; padding:5px 8px; font-size:11px; width:100%; font-family:'Roboto',sans-serif; outline:none; resize:vertical; line-height:1.5; }
+    .f-textarea:focus { border-color:var(--accent); }
+    .f-select { background:var(--bg); border:1px solid var(--border); color:#e4e4e7; padding:5px 8px; font-size:12px; width:100%; outline:none; }
+    .f-row { margin-bottom:8px; }
+    .f-grid2 { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:8px; }
+
+    .btn { display:inline-flex; align-items:center; gap:5px; padding:6px 12px; font-size:11px; font-weight:700; border:none; cursor:pointer; transition:background .15s; }
+    .btn:disabled { opacity:.4; cursor:not-allowed; }
+    .btn-full { width:100%; justify-content:center; }
+    .btn-primary { background:var(--accent); color:#000; }
+    .btn-primary:hover:not(:disabled) { background:#b45309; }
+    .btn-green   { background:#15803d; color:#fff; }
+    .btn-green:hover:not(:disabled) { background:#166534; }
+    .btn-ghost   { background:var(--border); color:#e4e4e7; }
+    .btn-ghost:hover:not(:disabled) { background:#3f3f46; }
+    .btn-danger  { background:#991b1b; color:#fff; }
+    .btn-danger:hover:not(:disabled) { background:#7f1d1d; }
+    .btn-outline { background:none; border:1px solid var(--border); color:#a1a1aa; }
+    .btn-outline:hover:not(:disabled) { border-color:var(--accent); color:var(--accent); }
+    .btn-sm { padding:3px 8px; font-size:10px; }
+    .btn-xs { padding:2px 6px; font-size:9px; }
+
+    .divider { border-top:1px solid var(--border); margin:8px 0; }
+
+    /* Production */
+    #prod-panel { overflow-y:auto; flex:1; }
+    .prod-section { border:1px solid var(--border); background:var(--card); margin:0 12px 8px; }
+    .prod-section-hdr { background:#1f1f22; border-bottom:1px solid var(--border); padding:5px 10px; display:flex; align-items:center; justify-content:space-between; }
+    .prod-section-title { color:var(--accent); font-size:9px; font-weight:700; letter-spacing:1px; }
+    .prod-section-body { padding:10px; }
+    .content-field { margin-bottom:7px; }
+    .content-field:last-child { margin-bottom:0; }
+
+    /* Section cards */
+    .section-card { border:1px solid var(--border); background:var(--bg); padding:10px 12px; margin-bottom:6px; }
+    .section-label { font-size:10px; font-weight:700; letter-spacing:.1em; color:var(--accent); text-transform:uppercase; margin-bottom:6px; }
+    .section-textarea { width:100%; background:var(--card); border:1px solid var(--border); color:#e4e4e7; font-size:12px; padding:6px 8px; resize:vertical; min-height:50px; font-family:inherit; outline:none; }
+    .section-textarea:focus { border-color:var(--accent); }
+    .section-row { display:flex; gap:6px; margin-top:6px; align-items:center; }
+    .section-preview-img { width:40px; height:71px; object-fit:cover; border:1px solid var(--border); display:none; }
+
+    /* Video preview */
+    #vid-preview-wrap { display:flex; gap:10px; align-items:flex-start; padding:10px; }
+    #vid-player-box { width:72px; height:128px; background:#000; border:1px solid var(--border); flex-shrink:0; overflow:hidden; position:relative; cursor:pointer; }
+    #vid-player { width:100%; height:100%; object-fit:cover; display:block; }
+    #vid-play-overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.5); transition:background .15s; }
+    #vid-play-overlay:hover { background:rgba(0,0,0,.25); }
+    .play-tri { width:0; height:0; border-top:9px solid transparent; border-bottom:9px solid transparent; border-left:16px solid var(--accent); margin-left:3px; }
+    .vid-meta { flex:1; min-width:0; }
+    .vid-meta-title { color:#fafafa; font-size:12px; font-weight:500; margin-bottom:5px; line-height:1.4; }
+    .vid-meta-row { color:var(--muted); font-size:10px; margin-bottom:2px; }
+    #vid-filename { color:var(--accent); font-size:10px; text-decoration:underline; cursor:pointer; margin-top:4px; word-break:break-all; display:block; }
+
+    #prod-actions { display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:0 12px 10px; }
+
+    /* Log */
+    #log-wrap { height:50%; flex-shrink:0; display:flex; flex-direction:column; border-top:1px solid var(--border); overflow:hidden; }
+    #log-box { background:var(--bg); padding:8px; font-family:'JetBrains Mono',monospace; font-size:10px; line-height:1.6; overflow-y:auto; overflow-x:hidden; flex:1; min-height:0; word-break:break-all; }
+    .log-INFO  { color:#a1a1aa; }
+    .log-ERROR { color:var(--red); }
+    .log-WARN  { color:var(--yellow); }
+
+    /* Scheduler */
+    #scheduler-card { background:var(--card); border:1px solid var(--border); padding:8px 10px; display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-shrink:0; }
+    #sched-status-label { font-size:12px; font-weight:700; }
+    #sched-next-info { color:var(--muted); font-size:10px; margin-top:2px; }
+    .sched-item { border:1px solid var(--border); padding:7px 10px; margin-bottom:5px; display:flex; align-items:center; gap:8px; }
+    .sched-time { color:var(--accent); font-size:11px; font-weight:700; min-width:38px; font-family:'JetBrains Mono',monospace; }
+    .sched-info { flex:1; min-width:0; }
+    .sched-label { color:#e4e4e7; font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .sched-sub { color:var(--muted); font-size:9px; margin-top:1px; }
+    .sched-actions { display:flex; gap:4px; flex-shrink:0; }
+    .sched-btn { background:none; border:none; color:var(--muted); cursor:pointer; font-size:11px; padding:2px 4px; }
+    .sched-btn:hover { color:var(--accent); }
+    .sched-btn.del:hover { color:var(--red); }
+    .sched-disabled .sched-time { opacity:.4; }
+    .sched-disabled .sched-label { opacity:.4; }
+    .add-sched-btn { border:1px dashed var(--border); padding:7px; text-align:center; color:var(--border); font-size:10px; cursor:pointer; width:100%; background:none; margin-top:4px; }
+    .add-sched-btn:hover { border-color:var(--accent); color:var(--accent); }
+
+    /* Drafts */
+    .draft-item { border:1px solid var(--border); padding:7px 10px; margin-bottom:5px; display:flex; align-items:center; gap:8px; }
+    .draft-info { flex:1; min-width:0; }
+    .draft-title { color:#d4d4d8; font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .draft-sub { color:var(--muted); font-size:9px; margin-top:1px; }
+    .draft-actions { display:flex; gap:4px; flex-shrink:0; }
+
+    /* Time setting */
+    #time-setting { display:flex; gap:5px; align-items:center; }
+
+    /* Modals */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:500; align-items:center; justify-content:center; }
+    .modal-overlay.open { display:flex; }
+    #modal { background:var(--card); border:1px solid var(--accent); padding:20px; width:340px; max-width:90vw; }
+    #modal h3 { color:var(--accent); font-size:13px; font-weight:700; margin-bottom:14px; letter-spacing:.05em; text-transform:uppercase; }
+    #pub-modal { background:var(--card); border:1px solid var(--accent); padding:20px; width:580px; max-width:95vw; max-height:90vh; overflow-y:auto; }
+    #pub-modal h3 { color:var(--accent); font-size:13px; font-weight:700; margin-bottom:14px; letter-spacing:.05em; text-transform:uppercase; border-bottom:1px solid var(--border); padding-bottom:10px; }
+    .pub-grid { display:grid; grid-template-columns:1fr 1px 1fr; gap:16px; }
+    .pub-sep { background:var(--border); }
+    .pub-time-opt { border:1px solid var(--border); padding:10px; cursor:pointer; margin-bottom:8px; transition:border-color .15s, background .15s; }
+    .pub-time-opt.selected { border-color:var(--accent); background:#0f0a00; }
+    .pub-time-opt-hdr { display:flex; align-items:center; gap:8px; margin-bottom:3px; }
+    .pub-radio { width:10px; height:10px; border-radius:50%; border:2px solid var(--border); flex-shrink:0; transition:background .15s, border-color .15s; }
+    .pub-time-opt.selected .pub-radio { background:var(--accent); border-color:var(--accent); }
+    .pub-time-opt-title { color:#fafafa; font-size:12px; font-weight:700; }
+    .pub-time-opt-desc { color:var(--muted); font-size:10px; margin-left:18px; }
+
+    /* Stats */
+    #stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:5px; padding:10px 12px; border-bottom:1px solid var(--border); flex-shrink:0; }
+    .stat-box { background:var(--card); border:1px solid var(--border); padding:7px 9px; }
+    .stat-lbl { color:var(--muted); font-size:9px; letter-spacing:.05em; text-transform:uppercase; margin-bottom:2px; }
+    .stat-num { color:#fafafa; font-size:20px; font-weight:700; line-height:1; }
+    .stat-sub { color:#a1a1aa; font-size:9px; margin-top:2px; }
+
+    /* Video list */
+    .video-item { border-bottom:1px solid var(--border); padding:8px 0; display:flex; gap:8px; cursor:pointer; text-decoration:none; color:inherit; }
+    .video-item:last-child { border-bottom:none; }
+    .video-item:hover .video-item-title { color:var(--accent); }
+    .video-thumb-wrap { width:38px; height:68px; background:var(--border); flex-shrink:0; overflow:hidden; }
+    .video-thumb-wrap img { width:100%; height:100%; object-fit:cover; }
+    .video-item-info { flex:1; min-width:0; }
+    .video-item-title { color:#d4d4d8; font-size:11px; font-weight:500; margin-bottom:3px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; line-height:1.3; transition:color .15s; }
+    .video-item-meta { color:var(--muted); font-size:10px; }
+    .video-item-stats { color:#a1a1aa; font-size:10px; margin-top:2px; }
+
+    /* Skeleton */
+    .skeleton { background:linear-gradient(90deg,var(--border) 25%,#3f3f46 50%,var(--border) 75%); background-size:200% 100%; animation:shimmer 1.5s infinite; }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+    /* Dots */
+    .dot { width:7px; height:7px; border-radius:50%; display:inline-block; flex-shrink:0; }
+    .dot-green  { background:var(--green); animation:dpulse 2s infinite; }
+    .dot-yellow { background:var(--yellow); animation:dpulse 1s infinite; }
+    .dot-red    { background:var(--red); }
+    .dot-muted  { background:var(--border); }
+    @keyframes dpulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+    /* Toast */
+    #toast { position:fixed; bottom:20px; right:20px; padding:10px 16px; font-size:12px; font-weight:700; display:none; z-index:999; border:1px solid; }
+
+    /* Spinner */
+    .spin { display:inline-block; animation:spin 1s linear infinite; }
+    @keyframes spin { to{transform:rotate(360deg);} }
+
+    /* Settings accordion */
+    .settings-section { border:1px solid var(--border); margin-bottom:4px; }
+    .settings-header { padding:10px 14px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); background:var(--card); user-select:none; }
+    .settings-header:hover { background:#1f1f22; }
+    .settings-body { padding:14px; display:none; }
+    .settings-body.open { display:block; }
+    .settings-arrow { transition:transform .2s; font-size:10px; }
+    .settings-header.open .settings-arrow { transform:rotate(90deg); }
+    .settings-save-bar { position:sticky; bottom:0; background:var(--card); border-top:1px solid var(--border); padding:10px 14px; z-index:10; }
+
+    /* Range input */
+    .f-range { width:100%; accent-color:var(--accent); }
+
+    /* Toggle */
+    .toggle-wrap { display:flex; align-items:center; gap:8px; }
+    .toggle { position:relative; width:36px; height:20px; flex-shrink:0; }
+    .toggle input { opacity:0; width:0; height:0; }
+    .toggle-slider { position:absolute; inset:0; background:var(--border); cursor:pointer; transition:.3s; }
+    .toggle-slider:before { position:absolute; content:""; height:14px; width:14px; left:3px; bottom:3px; background:#71717a; transition:.3s; }
+    .toggle input:checked + .toggle-slider { background:#422006; }
+    .toggle input:checked + .toggle-slider:before { transform:translateX(16px); background:var(--accent); }
+    .toggle-label { font-size:12px; color:#e4e4e7; }
+
+    /* Test result inline */
+    .test-result { font-size:10px; margin-top:4px; padding:4px 8px; }
+    .test-ok  { background:#14532d; color:var(--green); }
+    .test-err { background:#450a0a; color:var(--red); }
+  </style>
+</head>
+<body>
+
+<!-- TOP STRIP -->
+<div id="top-strip">
+  <span id="channel-name">&#9889; Video Automation System</span>
+  <span class="strip-sep">|</span>
+  <div id="header-channels" style="display:flex;align-items:center;gap:10px;">
+    <span style="color:var(--muted);font-size:11px;">connecting…</span>
+  </div>
+  <button id="btn-new-video" onclick="resetProd()">+ NEW VIDEO</button>
+</div>
+
+<!-- TABS -->
+<div id="tabs-bar">
+  <button class="tab-btn active" onclick="setTab(this,'col-production')">PRODUCTION</button>
+  <button class="tab-btn" onclick="setTab(this,'col-schedule')">SCHEDULE</button>
+  <button class="tab-btn" onclick="setTab(this,'col-calendar')">CALENDAR</button>
+  <button class="tab-btn" onclick="setTab(this,'col-drafts')">DRAFTS</button>
+  <button class="tab-btn" onclick="setTab(this,'col-videos')">VIDEOS</button>
+  <button class="tab-btn" onclick="setTab(this,'col-settings')">SETTINGS</button>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div id="columns">
+  <div id="main-panel">
+
+    <!-- ═══════════════════════════════ PRODUCTION TAB ═══ -->
+    <div class="col" id="col-production" style="display:flex;flex:1;overflow:hidden;">
+      <div class="panel-hdr">
+        <span class="panel-title">PRODUCTION</span>
+        <span class="panel-badge pb-muted" id="prod-badge">IDLE</span>
+      </div>
+
+      <!-- Two-column production layout -->
+      <div style="display:grid;grid-template-columns:1fr 260px;flex:1;overflow:hidden;">
+
+        <!-- LEFT: Generation panel -->
+        <div id="prod-panel" style="border-right:1px solid var(--border);">
+
+          <!-- Topic + Generate -->
+          <div style="padding:10px 12px 0;">
+            <div class="f-row">
+              <label class="f-label">Topic (optional)</label>
+              <input class="f-input" id="topic-input" type="text" placeholder="Leave blank — AI will choose…">
+            </div>
+            <button class="btn btn-primary btn-full" id="btn-gen-content" onclick="generateContent()" style="margin-bottom:10px;">
+              &#9654; GENERATE CONTENT
+            </button>
+          </div>
+
+          <!-- Section Cards (hidden until content ready) -->
+          <div id="sec-sections" style="display:none;padding:0 12px;">
+
+            <div id="sections-container">
+              <!-- Hook -->
+              <div class="section-card">
+                <div class="section-label">Hook</div>
+                <textarea class="section-textarea" id="text-hook" rows="2"></textarea>
+                <div class="section-row">
+                  <span style="color:var(--muted);font-size:9px;min-width:22px;">DUR</span>
+                  <input type="number" class="f-input" id="dur-hook" value="3.5" step="0.5" min="1" style="width:58px;">
+                  <span style="color:var(--muted);font-size:9px;min-width:16px;">KW</span>
+                  <input type="text" class="f-input" id="kw-hook" placeholder="keyword" style="flex:1;">
+                  <button class="btn btn-xs btn-ghost" onclick="previewSection('hook')" title="Preview stock frame">&#128247;</button>
+                  <img class="section-preview-img" id="preview-hook" alt="">
+                </div>
+              </div>
+              <!-- Title -->
+              <div class="section-card">
+                <div class="section-label">Title</div>
+                <textarea class="section-textarea" id="text-title" rows="2"></textarea>
+                <div class="section-row">
+                  <span style="color:var(--muted);font-size:9px;min-width:22px;">DUR</span>
+                  <input type="number" class="f-input" id="dur-title" value="3.5" step="0.5" min="1" style="width:58px;">
+                  <span style="color:var(--muted);font-size:9px;min-width:16px;">KW</span>
+                  <input type="text" class="f-input" id="kw-title" placeholder="keyword" style="flex:1;">
+                  <button class="btn btn-xs btn-ghost" onclick="previewSection('title')" title="Preview stock frame">&#128247;</button>
+                  <img class="section-preview-img" id="preview-title" alt="">
+                </div>
+              </div>
+              <!-- Fact -->
+              <div class="section-card">
+                <div class="section-label">Fact</div>
+                <textarea class="section-textarea" id="text-fact" rows="3"></textarea>
+                <div class="section-row">
+                  <span style="color:var(--muted);font-size:9px;min-width:22px;">DUR</span>
+                  <input type="number" class="f-input" id="dur-fact" value="7.0" step="0.5" min="1" style="width:58px;">
+                  <span style="color:var(--muted);font-size:9px;min-width:16px;">KW</span>
+                  <input type="text" class="f-input" id="kw-fact" placeholder="keyword" style="flex:1;">
+                  <button class="btn btn-xs btn-ghost" onclick="previewSection('fact')" title="Preview stock frame">&#128247;</button>
+                  <img class="section-preview-img" id="preview-fact" alt="">
+                </div>
+              </div>
+              <!-- Detail -->
+              <div class="section-card">
+                <div class="section-label">Detail</div>
+                <textarea class="section-textarea" id="text-detail" rows="3"></textarea>
+                <div class="section-row">
+                  <span style="color:var(--muted);font-size:9px;min-width:22px;">DUR</span>
+                  <input type="number" class="f-input" id="dur-detail" value="7.0" step="0.5" min="1" style="width:58px;">
+                  <span style="color:var(--muted);font-size:9px;min-width:16px;">KW</span>
+                  <input type="text" class="f-input" id="kw-detail" placeholder="keyword" style="flex:1;">
+                  <button class="btn btn-xs btn-ghost" onclick="previewSection('detail')" title="Preview stock frame">&#128247;</button>
+                  <img class="section-preview-img" id="preview-detail" alt="">
+                </div>
+              </div>
+              <!-- Closing -->
+              <div class="section-card">
+                <div class="section-label">Closing</div>
+                <textarea class="section-textarea" id="text-closing" rows="2"></textarea>
+                <div class="section-row">
+                  <span style="color:var(--muted);font-size:9px;min-width:22px;">DUR</span>
+                  <input type="number" class="f-input" id="dur-closing" value="4.0" step="0.5" min="1" style="width:58px;">
+                  <span style="color:var(--muted);font-size:9px;min-width:16px;">KW</span>
+                  <input type="text" class="f-input" id="kw-closing" placeholder="keyword" style="flex:1;">
+                  <button class="btn btn-xs btn-ghost" onclick="previewSection('closing')" title="Preview stock frame">&#128247;</button>
+                  <img class="section-preview-img" id="preview-closing" alt="">
+                </div>
+              </div>
+              <!-- CTA -->
+              <div class="section-card">
+                <div class="section-label">CTA</div>
+                <textarea class="section-textarea" id="text-cta" rows="1"></textarea>
+                <div class="section-row">
+                  <span style="color:var(--muted);font-size:9px;min-width:22px;">DUR</span>
+                  <input type="number" class="f-input" id="dur-cta" value="3.0" step="0.5" min="1" style="width:58px;">
+                  <span style="color:var(--muted);font-size:9px;min-width:16px;">KW</span>
+                  <input type="text" class="f-input" id="kw-cta" placeholder="keyword" style="flex:1;">
+                  <button class="btn btn-xs btn-ghost" onclick="previewSection('cta')" title="Preview stock frame">&#128247;</button>
+                  <img class="section-preview-img" id="preview-cta" alt="">
+                </div>
+              </div>
+            </div>
+
+            <!-- Generate Video + Save Draft -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;" id="sec-gen-video">
+              <button class="btn btn-green btn-full" id="btn-gen-video" onclick="generateVideo()">&#127909; GENERATE VIDEO</button>
+              <button class="btn btn-outline btn-full" onclick="saveDraft()">&#128193; SAVE DRAFT</button>
+            </div>
+            <div style="margin-bottom:10px;" id="sec-prod-actions" style="display:none;">
+              <button class="btn btn-primary btn-full" disabled title="Upload disabled" style="opacity:0.4;cursor:not-allowed;">&#128640; PUBLISH</button>
+            </div>
+
+          </div><!-- /sec-sections -->
+
+        </div><!-- /LEFT col -->
+
+        <!-- RIGHT: Preview + meta -->
+        <div style="display:flex;flex-direction:column;overflow:hidden;">
+          <div style="flex:1;overflow-y:auto;padding:10px;">
+
+            <!-- Video preview (hidden until ready) -->
+            <div id="sec-preview" style="display:none;margin-bottom:10px;">
+              <div style="font-size:9px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px;">VIDEO PREVIEW</div>
+              <div id="vid-preview-wrap">
+                <div id="vid-player-box" onclick="togglePlay()">
+                  <video id="vid-player" loop playsinline preload="metadata"></video>
+                  <div id="vid-play-overlay"><div class="play-tri"></div></div>
+                </div>
+                <div class="vid-meta">
+                  <div class="vid-meta-title" id="vid-title">—</div>
+                  <div class="vid-meta-row">&#128273; <span id="vid-keyword">—</span></div>
+                  <div class="vid-meta-row">~28s · 1080×1920</div>
+                  <a id="vid-filename" onclick="downloadVid(event)">—</a>
+                </div>
+              </div>
+              <button class="btn btn-ghost btn-full btn-sm" id="btn-regen-video" onclick="regenerateVideo()">
+                &#128260; REGENERATE VIDEO
+              </button>
+            </div>
+
+            <!-- Meta fields -->
+            <div id="sec-meta" style="display:none;">
+              <div class="f-row">
+                <label class="f-label">YouTube Title</label>
+                <input class="f-input" id="field-yt-title" type="text">
+              </div>
+              <div class="f-row">
+                <label class="f-label">SEO Description</label>
+                <textarea class="f-textarea" id="field-desc" rows="3"></textarea>
+              </div>
+              <div class="f-row">
+                <label class="f-label">Hashtags</label>
+                <input class="f-input" id="field-hashtags" type="text" placeholder="#tag1 #tag2 …">
+              </div>
+              <div class="f-grid2" style="margin-bottom:0;">
+                <div>
+                  <label class="f-label">Privacy</label>
+                  <select class="f-select" id="field-privacy">
+                    <option value="public">Public</option>
+                    <option value="private">Private</option>
+                    <option value="unlisted">Unlisted</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="f-label">Category</label>
+                  <select class="f-select" id="field-category">
+                    <option value="28">Science/Tech</option>
+                    <option value="22">Education</option>
+                    <option value="24">Entertainment</option>
+                    <option value="27">Education</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div><!-- /RIGHT col -->
+
+      </div><!-- /two-column grid -->
+    </div><!-- /col-production -->
+
+    <!-- ═══════════════════════════════ SCHEDULE TAB ═══ -->
+    <div class="col" id="col-schedule" style="display:none;flex:1;overflow:hidden;">
+      <div class="panel-hdr">
+        <span class="panel-title">SCHEDULE</span>
+        <span class="panel-badge pb-muted" id="takvim-badge">0 SCHEDULED</span>
+      </div>
+      <div class="panel-body">
+        <div id="scheduler-card">
+          <div style="flex:1;">
+            <div id="sched-status-label">&#9679; IDLE</div>
+            <div id="sched-next-info">—</div>
+          </div>
+          <button class="btn btn-green btn-sm" id="btn-sched-toggle" onclick="toggleScheduler()">Start</button>
+        </div>
+        <div class="divider"></div>
+        <div style="color:var(--muted);font-size:9px;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px;">Scheduled Uploads</div>
+        <div id="schedules-list">
+          <div class="skeleton" style="height:36px;margin-bottom:5px;"></div>
+        </div>
+        <button class="add-sched-btn" onclick="openModal()">+ Add new scheduled upload</button>
+        <div class="divider"></div>
+        <div style="color:var(--muted);font-size:9px;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px;">Default Upload Time</div>
+        <div id="time-setting">
+          <input class="f-input" id="sched-hour" type="number" min="0" max="23" value="10" style="width:48px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:14px;">
+          <span style="color:var(--muted);font-size:18px;font-weight:700;padding:0 2px;">:</span>
+          <input class="f-input" id="sched-minute" type="number" min="0" max="59" value="00" style="width:48px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:14px;">
+          <button class="btn btn-ghost btn-sm" style="flex:1;" onclick="saveDefaultTime()">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════ CALENDAR TAB ═══ -->
+    <div class="col" id="col-calendar" style="display:none;flex:1;overflow:hidden;">
+      <div class="panel-hdr">
+        <span class="panel-title">CALENDAR</span>
+        <div style="display:flex;align-items:center;gap:4px;margin-left:auto;">
+          <button class="btn btn-ghost btn-sm" onclick="calNav(-1)">&#8249;</button>
+          <span id="cal-month-label" style="color:#e4e4e7;font-size:11px;font-weight:700;min-width:96px;text-align:center;">—</span>
+          <button class="btn btn-ghost btn-sm" onclick="calNav(1)">&#8250;</button>
+        </div>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:10px 12px;">
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px;">
+          <div style="text-align:center;color:var(--muted);font-size:9px;font-weight:700;padding:3px 0;">MON</div>
+          <div style="text-align:center;color:var(--muted);font-size:9px;font-weight:700;padding:3px 0;">TUE</div>
+          <div style="text-align:center;color:var(--muted);font-size:9px;font-weight:700;padding:3px 0;">WED</div>
+          <div style="text-align:center;color:var(--muted);font-size:9px;font-weight:700;padding:3px 0;">THU</div>
+          <div style="text-align:center;color:var(--muted);font-size:9px;font-weight:700;padding:3px 0;">FRI</div>
+          <div style="text-align:center;color:var(--muted);font-size:9px;font-weight:700;padding:3px 0;color:#ef4444;">SAT</div>
+          <div style="text-align:center;color:var(--muted);font-size:9px;font-weight:700;padding:3px 0;color:#ef4444;">SUN</div>
+        </div>
+        <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;"></div>
+        <div id="cal-day-detail" style="margin-top:12px;"></div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════ DRAFTS TAB ═══ -->
+    <div class="col" id="col-drafts" style="display:none;flex:1;overflow:hidden;">
+      <div class="panel-hdr">
+        <span class="panel-title">DRAFTS</span>
+        <span class="panel-badge pb-accent" id="draft-count"></span>
+      </div>
+      <div class="panel-body">
+        <div id="drafts-list">
+          <div style="color:var(--muted);font-size:11px;padding:8px 0;text-align:center;">Loading…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════ VIDEOS TAB ═══ -->
+    <div class="col" id="col-videos" style="display:none;flex:1;overflow:hidden;">
+      <div class="panel-hdr">
+        <span class="panel-title">VIDEOS</span>
+        <span class="panel-badge pb-muted" id="videos-badge">— VIDEOS</span>
+      </div>
+      <div class="panel-body">
+        <div id="videos-list">
+          <div style="color:var(--muted);font-size:11px;padding:8px 0;text-align:center;">Loading…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════ SETTINGS TAB ═══ -->
+    <div class="col" id="col-settings" style="display:none;flex:1;overflow:hidden;">
+      <div class="panel-hdr">
+        <span class="panel-title">SETTINGS</span>
+        <span class="panel-badge pb-muted" id="settings-badge">—</span>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:10px 12px;padding-bottom:60px;">
+
+        <!-- Channel OAuth -->
+        <div class="settings-section">
+          <div class="settings-header" onclick="toggleSettingsSection(this)">
+            CHANNEL <span class="settings-arrow">&#9654;</span>
+          </div>
+          <div class="settings-body">
+            <div id="channels-list"></div>
+            <div style="position:relative;margin-top:4px;">
+              <button class="btn btn-ghost btn-sm" style="width:100%;" onclick="togglePlatformPicker(event)">
+                ＋ Yeni Kanal Bağla
+              </button>
+              <div id="platform-picker" style="display:none;position:absolute;left:0;right:0;top:100%;margin-top:4px;background:var(--card);border:1px solid var(--border);z-index:200;">
+                <button onclick="connectChannel()" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;background:none;border:none;color:#e4e4e7;cursor:pointer;font-family:inherit;font-size:12px;" onmouseover="this.style.background='#27272a'" onmouseout="this.style.background='none'">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="#ff0000"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8zM9.8 15.5V8.5l6.3 3.5-6.3 3.5z"/></svg>
+                  YouTube
+                </button>
+                <button disabled style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;background:none;border:none;color:#52525b;cursor:not-allowed;font-family:inherit;font-size:12px;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="#52525b"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>
+                  Instagram <span style="margin-left:auto;font-size:10px;color:#3f3f46;background:#1c1917;padding:1px 6px;">Yakında</span>
+                </button>
+                <button disabled style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;background:none;border:none;color:#52525b;cursor:not-allowed;font-family:inherit;font-size:12px;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="#52525b"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.85 4.85 0 0 1-1.01-.07z"/></svg>
+                  TikTok <span style="margin-left:auto;font-size:10px;color:#3f3f46;background:#1c1917;padding:1px 6px;">Yakında</span>
+                </button>
+              </div>
+            </div>
+            <div id="oauth-pending-msg" style="display:none;align-items:center;gap:8px;margin-top:10px;font-size:11px;color:var(--accent);">
+              <span style="display:inline-block;width:12px;height:12px;border:2px solid #3f3f46;border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0;"></span>
+              Tarayıcıda yetkilendirme bekleniyor…
+            </div>
+            <div id="oauth-error-msg" style="display:none;margin-top:8px;font-size:11px;color:#ef4444;"></div>
+          </div>
+        </div>
+
+        <!-- Branding -->
+        <div class="settings-section">
+          <div class="settings-header" onclick="toggleSettingsSection(this)">
+            BRANDING <span class="settings-arrow">&#9654;</span>
+          </div>
+          <div class="settings-body">
+            <div class="f-row">
+              <label class="f-label">CTA Text</label>
+              <input class="f-input" id="s-channel-cta" type="text">
+            </div>
+            <div class="f-row">
+              <label class="f-label">Accent Color</label>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <input type="color" id="s-channel-accent" style="width:36px;height:28px;padding:1px;background:var(--bg);border:1px solid var(--border);cursor:pointer;">
+                <input class="f-input" id="s-channel-accent-hex" type="text" placeholder="#d97706" style="flex:1;">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Content AI -->
+        <div class="settings-section">
+          <div class="settings-header" onclick="toggleSettingsSection(this)">
+            CONTENT AI <span class="settings-arrow">&#9654;</span>
+          </div>
+          <div class="settings-body">
+            <div class="f-row">
+              <label class="f-label">Provider</label>
+              <select class="f-select" id="s-content-provider" onchange="updateContentProviderUI()">
+                <option value="claude">Claude (Anthropic)</option>
+                <option value="openai">OpenAI / Custom</option>
+                <option value="gemini">Gemini</option>
+              </select>
+            </div>
+            <div class="f-row">
+              <label class="f-label">API Key</label>
+              <input class="f-input" id="s-content-key" type="password" placeholder="sk-ant-…">
+            </div>
+            <div class="f-row">
+              <label class="f-label">Model</label>
+              <input class="f-input" id="s-content-model" type="text" placeholder="claude-sonnet-4-6">
+            </div>
+            <div class="f-row">
+              <label class="f-label">System Prompt</label>
+              <textarea class="f-textarea" id="s-content-prompt" rows="5"></textarea>
+            </div>
+            <div class="f-row">
+              <label class="f-label">Max Tokens</label>
+              <input class="f-input" id="s-content-tokens" type="number" min="100" max="4000" step="100">
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="testProvider('content')">&#128268; Test Connection</button>
+            <div id="test-result-content"></div>
+          </div>
+        </div>
+
+        <!-- Voice / TTS -->
+        <div class="settings-section">
+          <div class="settings-header" onclick="toggleSettingsSection(this)">
+            VOICE / TTS <span class="settings-arrow">&#9654;</span>
+          </div>
+          <div class="settings-body">
+            <div class="f-row">
+              <div class="toggle-wrap">
+                <label class="toggle"><input type="checkbox" id="s-tts-enabled" onchange="updateTTSProviderUI()"><span class="toggle-slider"></span></label>
+                <span class="toggle-label">Enable TTS</span>
+              </div>
+            </div>
+            <div id="tts-settings-wrap">
+              <div class="f-row">
+                <label class="f-label">Provider</label>
+                <select class="f-select" id="s-tts-provider" onchange="updateTTSProviderUI()">
+                  <option value="elevenlabs">ElevenLabs</option>
+                  <option value="openai">OpenAI TTS</option>
+                  <option value="edge">Edge-TTS (Free)</option>
+                  <option value="disabled">Disabled</option>
+                </select>
+              </div>
+              <div class="f-row" id="tts-key-row">
+                <label class="f-label">API Key</label>
+                <input class="f-input" id="s-tts-key" type="password" placeholder="API key…">
+              </div>
+              <div class="f-row" id="tts-voiceid-row">
+                <label class="f-label">Voice ID (ElevenLabs)</label>
+                <input class="f-input" id="s-tts-voiceid" type="text">
+              </div>
+              <div class="f-row" id="tts-openai-voice-row" style="display:none;">
+                <label class="f-label">Voice (OpenAI)</label>
+                <select class="f-select" id="s-tts-openai-voice">
+                  <option value="alloy">alloy</option>
+                  <option value="echo">echo</option>
+                  <option value="fable">fable</option>
+                  <option value="onyx">onyx</option>
+                  <option value="nova">nova</option>
+                  <option value="shimmer">shimmer</option>
+                </select>
+              </div>
+              <div class="f-row">
+                <label class="f-label">Volume: <span id="s-tts-vol-val">0.88</span></label>
+                <input class="f-range" id="s-tts-vol" type="range" min="0" max="1" step="0.01" oninput="el('s-tts-vol-val').textContent=parseFloat(this.value).toFixed(2)">
+              </div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="testProvider('tts')">&#128268; Test Connection</button>
+            <div id="test-result-tts"></div>
+          </div>
+        </div>
+
+        <!-- Video Background -->
+        <div class="settings-section">
+          <div class="settings-header" onclick="toggleSettingsSection(this)">
+            VIDEO BACKGROUND <span class="settings-arrow">&#9654;</span>
+          </div>
+          <div class="settings-body">
+            <div class="f-row">
+              <div class="toggle-wrap">
+                <label class="toggle"><input type="checkbox" id="s-stock-enabled" onchange="updateStockProviderUI()"><span class="toggle-slider"></span></label>
+                <span class="toggle-label">Enable Stock Video</span>
+              </div>
+            </div>
+            <div id="stock-settings-wrap">
+              <div class="f-row">
+                <label class="f-label">Provider</label>
+                <select class="f-select" id="s-stock-provider" onchange="updateStockProviderUI()">
+                  <option value="pexels">Pexels</option>
+                  <option value="pixabay">Pixabay</option>
+                  <option value="local">Local Folder</option>
+                  <option value="disabled">Disabled</option>
+                </select>
+              </div>
+              <div class="f-row" id="stock-pexels-row">
+                <label class="f-label">Pexels API Key</label>
+                <input class="f-input" id="s-stock-pexels" type="password">
+              </div>
+              <div class="f-row" id="stock-pixabay-row" style="display:none;">
+                <label class="f-label">Pixabay API Key</label>
+                <input class="f-input" id="s-stock-pixabay" type="password">
+              </div>
+              <div class="f-row" id="stock-local-row" style="display:none;">
+                <label class="f-label">Local Folder Path</label>
+                <input class="f-input" id="s-stock-local" type="text" placeholder="stock_videos/">
+              </div>
+              <div class="f-row">
+                <label class="f-label">Dark Overlay: <span id="s-stock-overlay-val">55%</span></label>
+                <input class="f-range" id="s-stock-overlay" type="range" min="0" max="1" step="0.01" oninput="el('s-stock-overlay-val').textContent=Math.round(this.value*100)+'%'">
+              </div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="testProvider('stock')">&#128268; Test Connection</button>
+            <div id="test-result-stock"></div>
+          </div>
+        </div>
+
+        <!-- Video Timing -->
+        <div class="settings-section">
+          <div class="settings-header" onclick="toggleSettingsSection(this)">
+            VIDEO TIMING <span class="settings-arrow">&#9654;</span>
+          </div>
+          <div class="settings-body">
+            <div style="color:var(--muted);font-size:9px;letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px;">Section Durations (seconds)</div>
+            <div id="timing-rows">
+              <div class="f-grid2" style="margin-bottom:6px;">
+                <div><label class="f-label">Hook</label><input class="f-input" id="s-dur-hook" type="number" step="0.5" min="1"></div>
+                <div><label class="f-label">Title</label><input class="f-input" id="s-dur-title" type="number" step="0.5" min="1"></div>
+              </div>
+              <div class="f-grid2" style="margin-bottom:6px;">
+                <div><label class="f-label">Fact</label><input class="f-input" id="s-dur-fact" type="number" step="0.5" min="1"></div>
+                <div><label class="f-label">Detail</label><input class="f-input" id="s-dur-detail" type="number" step="0.5" min="1"></div>
+              </div>
+              <div class="f-grid2" style="margin-bottom:8px;">
+                <div><label class="f-label">Closing</label><input class="f-input" id="s-dur-closing" type="number" step="0.5" min="1"></div>
+                <div><label class="f-label">CTA</label><input class="f-input" id="s-dur-cta" type="number" step="0.5" min="1"></div>
+              </div>
+            </div>
+            <div class="divider"></div>
+            <div class="f-row">
+              <label class="f-label">Music Volume (no TTS): <span id="s-music-vol-val">30%</span></label>
+              <input class="f-range" id="s-music-vol" type="range" min="0" max="1" step="0.01" oninput="el('s-music-vol-val').textContent=Math.round(this.value*100)+'%'">
+            </div>
+            <div class="f-row">
+              <label class="f-label">Music Volume (with TTS): <span id="s-music-tts-vol-val">10%</span></label>
+              <input class="f-range" id="s-music-tts-vol" type="range" min="0" max="1" step="0.01" oninput="el('s-music-tts-vol-val').textContent=Math.round(this.value*100)+'%'">
+            </div>
+          </div>
+        </div>
+
+        <!-- Upload Schedule -->
+        <div class="settings-section">
+          <div class="settings-header" onclick="toggleSettingsSection(this)">
+            UPLOAD SCHEDULE <span class="settings-arrow">&#9654;</span>
+          </div>
+          <div class="settings-body">
+            <div class="f-grid2">
+              <div>
+                <label class="f-label">Default Hour (0-23)</label>
+                <input class="f-input" id="s-upload-hour" type="number" min="0" max="23">
+              </div>
+              <div>
+                <label class="f-label">Default Minute</label>
+                <select class="f-select" id="s-upload-minute">
+                  <option value="0">:00</option>
+                  <option value="15">:15</option>
+                  <option value="30">:30</option>
+                  <option value="45">:45</option>
+                </select>
+              </div>
+            </div>
+            <div class="f-row">
+              <label class="f-label">Default Privacy</label>
+              <select class="f-select" id="s-upload-privacy">
+                <option value="public">Public</option>
+                <option value="private">Private</option>
+                <option value="unlisted">Unlisted</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /scroll area -->
+      <div class="settings-save-bar">
+        <button class="btn btn-primary btn-full" onclick="saveSettings()">&#10003; SAVE ALL SETTINGS</button>
+        <div id="settings-save-result" style="font-size:10px;text-align:center;margin-top:4px;"></div>
+      </div>
+    </div><!-- /col-settings -->
+
+  </div><!-- /#main-panel -->
+
+  <!-- RIGHT SIDEBAR: Stats + Log -->
+  <div class="col" id="col-sidebar">
+    <div class="panel-hdr">
+      <span class="panel-title">STATISTICS</span>
+      <span class="panel-badge pb-muted" id="yayinlar-badge">— VIDEOS</span>
+    </div>
+
+    <div id="stats-grid">
+      <div class="stat-box">
+        <div class="stat-lbl">Total Views</div>
+        <div class="stat-num skeleton" id="stat-views" style="height:22px;width:60px;">&nbsp;</div>
+        <div class="stat-sub" id="stat-views-sub">&nbsp;</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-lbl">Subscribers</div>
+        <div class="stat-num skeleton" id="stat-subs" style="height:22px;width:40px;">&nbsp;</div>
+        <div class="stat-sub" id="stat-subs-sub">&nbsp;</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-lbl">Total Videos</div>
+        <div class="stat-num skeleton" id="stat-videos" style="height:22px;width:32px;">&nbsp;</div>
+        <div class="stat-sub" id="stat-videos-sub">&nbsp;</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-lbl">Last Video</div>
+        <div class="stat-num" id="stat-last" style="font-size:13px;color:#a1a1aa;">—</div>
+        <div class="stat-sub" id="stat-last-sub">&nbsp;</div>
+      </div>
+    </div>
+
+    <div id="log-wrap">
+      <div style="background:var(--card);padding:4px 12px;font-size:9px;color:var(--muted);letter-spacing:.05em;flex-shrink:0;">LIVE LOG</div>
+      <div id="log-box"></div>
+    </div>
+  </div>
+
+</div><!-- /#columns -->
+
+<!-- SCHEDULE MODAL -->
+<div id="modal-overlay" class="modal-overlay" onclick="closeModalIfOutside(event)">
+  <div id="modal">
+    <h3 id="modal-title">Add New Schedule</h3>
+    <input type="hidden" id="modal-sched-id">
+    <div class="f-row">
+      <label class="f-label">Label</label>
+      <input class="f-input" id="modal-label" type="text" placeholder="Daily, Special…">
+    </div>
+    <div class="f-grid2">
+      <div>
+        <label class="f-label">Time (HH:MM)</label>
+        <input class="f-input" id="modal-time" type="text" placeholder="10:00">
+      </div>
+      <div>
+        <label class="f-label">Date (optional)</label>
+        <input class="f-input" id="modal-date" type="text" placeholder="2026-03-15">
+      </div>
+    </div>
+    <div class="f-row">
+      <label class="f-label">Topic (optional)</label>
+      <input class="f-input" id="modal-topic" type="text" placeholder="Leave blank — AI will choose">
+    </div>
+    <div style="display:flex;gap:8px;margin-top:14px;">
+      <button class="btn btn-primary" style="flex:1;" onclick="saveSchedule()">Save</button>
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- PUBLISH MODAL -->
+<div id="pub-modal-overlay" class="modal-overlay" onclick="closePubIfOutside(event)">
+  <div id="pub-modal">
+    <h3>Publish Confirmation</h3>
+    <div class="pub-grid">
+      <div>
+        <div class="f-label" style="margin-bottom:8px;">PREVIEW</div>
+        <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;">
+          <div style="width:90px;height:160px;background:#000;border:1px solid var(--border);flex-shrink:0;overflow:hidden;position:relative;cursor:pointer;" onclick="togglePubPlay()">
+            <video id="pub-video" loop playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;"></video>
+            <div id="pub-play-overlay" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5);">
+              <div class="play-tri"></div>
+            </div>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div id="pub-title" style="color:#fafafa;font-size:12px;font-weight:600;margin-bottom:5px;line-height:1.4;">—</div>
+            <div id="pub-yt-title" style="color:var(--muted);font-size:10px;margin-bottom:4px;">—</div>
+            <div id="pub-keyword" style="color:var(--muted);font-size:10px;">—</div>
+          </div>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--border);padding:8px;font-size:10px;">
+          <div class="f-label" style="margin-bottom:4px;">Description</div>
+          <div id="pub-desc" style="color:#a1a1aa;font-size:10px;line-height:1.5;margin-bottom:8px;">—</div>
+          <div id="pub-tags" style="display:flex;flex-wrap:wrap;gap:3px;"></div>
+        </div>
+      </div>
+      <div class="pub-sep"></div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="f-label">PUBLISH TIME</div>
+        <div class="pub-time-opt selected" id="pub-opt-now" onclick="selectPubTime('now')">
+          <div class="pub-time-opt-hdr"><div class="pub-radio"></div><span class="pub-time-opt-title">Publish Now</span></div>
+          <div class="pub-time-opt-desc">Goes live immediately after upload</div>
+        </div>
+        <div class="pub-time-opt" id="pub-opt-later" onclick="selectPubTime('later')">
+          <div class="pub-time-opt-hdr"><div class="pub-radio"></div><span class="pub-time-opt-title">Schedule</span></div>
+          <div class="pub-time-opt-desc">Added to calendar automatically</div>
+          <div id="pub-schedule-fields" style="display:none;margin-top:8px;">
+            <div class="f-grid2" style="margin-bottom:0;">
+              <div><label class="f-label">Date</label><input class="f-input" id="pub-date" type="text" placeholder="2026-03-15"></div>
+              <div><label class="f-label">Time</label><input class="f-input" id="pub-time" type="text" placeholder="10:00"></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <label class="f-label">Privacy</label>
+          <select class="f-select" id="pub-privacy">
+            <option value="public">Public</option>
+            <option value="private">Private</option>
+            <option value="unlisted">Unlisted</option>
+          </select>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--border);padding:8px;color:var(--muted);font-size:9px;line-height:1.5;">
+          Video settings cannot be changed after upload. Please review carefully.
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-top:auto;">
+          <button class="btn btn-primary btn-full" id="btn-pub-confirm" disabled title="Upload disabled" style="opacity:0.4;cursor:not-allowed;">&#10003; CONFIRM &amp; UPLOAD</button>
+          <button class="btn btn-outline btn-full" onclick="closePubModal()">&#10005; Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function el(id) { return document.getElementById(id); }
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function fmtNum(n) {
+  n = Number(n)||0;
+  if (n>=1000000) return (n/1000000).toFixed(1)+'M';
+  if (n>=1000)    return (n/1000).toFixed(1)+'K';
+  return String(n);
+}
+
+function showToast(msg, isErr=false) {
+  const t = el('toast');
+  t.textContent     = msg;
+  t.style.display   = 'block';
+  t.style.background  = isErr ? '#450a0a' : '#14532d';
+  t.style.borderColor = isErr ? 'var(--red)' : 'var(--green)';
+  t.style.color       = isErr ? 'var(--red)' : 'var(--green)';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=>t.style.display='none', 3500);
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+const ALL_TABS = ['col-production','col-schedule','col-calendar','col-drafts','col-videos','col-settings'];
+function setTab(btn, panelId) {
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  ALL_TABS.forEach(id=>{
+    const p = el(id);
+    if (p) p.style.display = (id===panelId) ? 'flex' : 'none';
+  });
+  if (panelId==='col-calendar') renderCalendar();
+  if (panelId==='col-settings') loadSettings();
+  if (panelId==='col-videos')   loadVideosList();
+}
+
+// ── Global State ──────────────────────────────────────────────────────────────
+let _schedRunning  = false;
+let _countdownSecs = 0;
+let _sse           = null;
+let _prodStage     = 'idle';
+let _contentData   = null;
+let _videoFilename = '';
+let _pubTimeMode   = 'now';
+let _calYear       = new Date().getFullYear();
+let _calMonth      = new Date().getMonth();
+let _calSchedules  = [];
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', ()=>{
+  loadChannels();
+  loadChannel();
+  loadSchedules();
+  loadDrafts();
+  pollStatus();
+  startSSE();
+  setInterval(pollStatus, 3000);
+  setInterval(()=>{ if(_countdownSecs>0) _countdownSecs--; }, 1000);
+  setInterval(loadChannels, 120000);
+  setInterval(loadChannel, 120000);
+});
+
+// ── Poll Status ───────────────────────────────────────────────────────────────
+async function pollStatus() {
+  try {
+    const r = await fetch('/api/status');
+    if (!r.ok) return;
+    const d = await r.json();
+    _countdownSecs = d.nextRun?.secondsLeft||0;
+    _schedRunning  = !!(d.scheduler?.running);
+    updateSchedulerCard(_schedRunning, d.nextRun);
+    syncProdWithStatus(d.pipeline, d.preview);
+  } catch(_){}
+}
+
+// ── Production Stage Machine ──────────────────────────────────────────────────
+function syncProdWithStatus(ps, pv) {
+  const badge = el('prod-badge');
+  if (ps?.running) {
+    const stepTxt = ps.current_step===1?'CONTENT': ps.current_step===2?'VIDEO': ps.current_step===3?'UPLOADING':'RUNNING';
+    badge.textContent = stepTxt; badge.className='panel-badge pb-yellow';
+    if (ps.current_step===2 && _prodStage!=='video_gen') setProdStage('video_gen');
+  } else if (pv?.status==='ready' && pv.video_filename && _prodStage!=='video_ready') {
+    badge.textContent='READY'; badge.className='panel-badge pb-green';
+    setProdStage('video_ready'); updateVideoPreview(pv);
+  } else if (pv?.status==='generating' && _prodStage==='idle') {
+    badge.textContent='VIDEO'; badge.className='panel-badge pb-yellow';
+  } else if (pv?.status==='error') {
+    badge.textContent='ERROR'; badge.className='panel-badge pb-red';
+    if (_prodStage==='video_gen') setProdStage('content_ready');
+    if (_prodStage==='content_gen') setProdStage('idle');
+  } else if (!ps?.running && pv?.status==='idle' && _prodStage==='uploading') {
+    badge.textContent='DONE'; badge.className='panel-badge pb-green';
+    setTimeout(resetProd, 3000);
+  }
+}
+
+function setProdStage(stage) {
+  _prodStage = stage;
+  const secSections = el('sec-sections');
+  const secPreview  = el('sec-preview');
+  const secMeta     = el('sec-meta');
+  const secGenVideo = el('sec-gen-video');
+  const secActions  = el('sec-prod-actions');
+  const btnGenC     = el('btn-gen-content');
+  const btnGenV     = el('btn-gen-video');
+  const btnRegenV   = el('btn-regen-video');
+  const badge       = el('prod-badge');
+
+  // Reset
+  if(btnGenV)   { btnGenV.disabled=false; btnGenV.innerHTML='&#127909; GENERATE VIDEO'; }
+  if(btnRegenV) { btnRegenV.disabled=false; }
+  btnGenC.disabled=false;
+
+  switch(stage) {
+    case 'idle':
+      badge.textContent='IDLE'; badge.className='panel-badge pb-muted';
+      btnGenC.textContent='&#9654; GENERATE CONTENT';
+      secSections.style.display='none';
+      secPreview.style.display='none';
+      secMeta.style.display='none';
+      break;
+
+    case 'content_gen':
+      badge.textContent='CONTENT'; badge.className='panel-badge pb-yellow';
+      btnGenC.disabled=true; btnGenC.innerHTML='<span class="spin">&#8635;</span> Generating…';
+      secSections.style.display='none';
+      secPreview.style.display='none';
+      secMeta.style.display='none';
+      break;
+
+    case 'content_ready':
+      badge.textContent='CONTENT READY'; badge.className='panel-badge pb-green';
+      btnGenC.innerHTML='&#9654; GENERATE CONTENT';
+      secSections.style.display='';
+      secPreview.style.display='none';
+      secMeta.style.display='';
+      if(secGenVideo) secGenVideo.style.display='';
+      if(secActions) secActions.style.display='none';
+      break;
+
+    case 'video_gen':
+      badge.textContent='VIDEO'; badge.className='panel-badge pb-yellow';
+      secSections.style.display='';
+      secPreview.style.display='none';
+      secMeta.style.display='';
+      if(btnGenV) { btnGenV.disabled=true; btnGenV.innerHTML='<span class="spin">&#8635;</span> Generating…'; }
+      break;
+
+    case 'video_ready':
+      badge.textContent='VIDEO READY'; badge.className='panel-badge pb-green';
+      secSections.style.display='';
+      secPreview.style.display='';
+      secMeta.style.display='';
+      if(secGenVideo) secGenVideo.style.display='';
+      if(secActions) secActions.style.display='';
+      break;
+
+    case 'uploading':
+      badge.textContent='UPLOADING'; badge.className='panel-badge pb-yellow';
+      if(btnGenV) btnGenV.disabled=true;
+      if(btnRegenV) btnRegenV.disabled=true;
+      secSections.style.display='';
+      secPreview.style.display='';
+      secMeta.style.display='';
+      break;
+  }
+}
+
+function resetProd() {
+  _contentData=null; _videoFilename='';
+  el('topic-input').value='';
+  ['hook','title','fact','detail','closing','cta'].forEach(s=>{
+    const ta=el('text-'+s); if(ta) ta.value='';
+    const ki=el('kw-'+s);   if(ki) ki.value='';
+    const pi=el('preview-'+s); if(pi){pi.style.display='none'; pi.src='';}
+  });
+  el('field-yt-title').value='';
+  el('field-desc').value='';
+  el('field-hashtags').value='';
+  const vid=el('vid-player'); vid.pause(); vid.src='';
+  setProdStage('idle');
+  el('topic-input').focus();
+}
+
+// ── Content Generation ────────────────────────────────────────────────────────
+async function generateContent() {
+  if (_prodStage==='video_gen'||_prodStage==='uploading') return;
+  const topic = el('topic-input').value.trim();
+  setProdStage('content_gen');
+  try {
+    const r = await fetch('/api/draft', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({topic})
+    });
+    const d = await r.json();
+    if (d.ok && d.content) {
+      _contentData = d.content;
+      populateSections(d.content);
+      fillMetaFields(d.content);
+      setProdStage('content_ready');
+    } else {
+      showToast('Error: '+(d.message||'Content generation failed'), true);
+      setProdStage('idle');
+    }
+  } catch(e) {
+    showToast('Connection error', true);
+    setProdStage('idle');
+  }
+}
+
+function populateSections(content) {
+  const sections = ['hook','title','fact','detail','closing','cta'];
+  const textMap = {
+    hook: content.hook, title: content.title,
+    fact: content.fact, detail: content.detail,
+    closing: content.closing, cta: content.cta || 'Subscribe'
+  };
+  const kwMap = content.video_keywords || {};
+  sections.forEach(s=>{
+    const ta=el('text-'+s); if(ta) ta.value = textMap[s]||'';
+    const ki=el('kw-'+s);   if(ki) ki.value = kwMap[s]||'';
+  });
+}
+
+function fillMetaFields(c) {
+  el('field-yt-title').value  = c.youtube_title   || '';
+  el('field-desc').value      = c.seo_description || '';
+  el('field-hashtags').value  = (c.hashtags||[]).join(' ');
+}
+
+function collectSectionOverrides() {
+  const sections = ['hook','title','fact','detail','closing','cta'];
+  const overrides = {};
+  sections.forEach(s=>{
+    overrides[s] = {
+      duration: parseFloat(el('dur-'+s)?.value)||null,
+      keyword:  el('kw-'+s)?.value?.trim()||null,
+    };
+  });
+  return overrides;
+}
+
+function getEditedContent() {
+  const tags = el('field-hashtags').value.trim().split(/\s+/).filter(h=>h);
+  // Collect text overrides from section cards
+  const c = Object.assign({}, _contentData||{});
+  ['hook','title','fact','detail','closing','cta'].forEach(s=>{
+    const ta=el('text-'+s); if(ta && ta.value.trim()) c[s]=ta.value.trim();
+  });
+  c.youtube_title   = el('field-yt-title').value.trim();
+  c.seo_description = el('field-desc').value.trim();
+  c.hashtags        = tags;
+  return c;
+}
+
+// ── Stock Section Preview ─────────────────────────────────────────────────────
+async function previewSection(sectionKey) {
+  const keyword = el('kw-'+sectionKey).value.trim();
+  if (!keyword) return;
+  const img = el('preview-'+sectionKey);
+  img.style.display='block'; img.src='';
+  try {
+    const r = await fetch('/api/stock/preview?keyword='+encodeURIComponent(keyword));
+    const d = await r.json();
+    if (d.ok) img.src=d.data;
+    else { img.style.display='none'; showToast('No frame: '+(d.message||''),true); }
+  } catch(e) { img.style.display='none'; }
+}
+
+// ── Video Generation ──────────────────────────────────────────────────────────
+async function generateVideo() {
+  if (_prodStage!=='content_ready' && _prodStage!=='video_ready') return;
+  const content = getEditedContent();
+  _contentData = content;
+  const topic = el('topic-input').value.trim();
+  const section_overrides = collectSectionOverrides();
+
+  if (_videoFilename) {
+    await fetch('/api/preview/cancel', {method:'POST'});
+    _videoFilename='';
+    const vid=el('vid-player'); vid.pause(); vid.src='';
+  }
+
+  setProdStage('video_gen');
+  const r = await fetch('/api/preview/start', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ topic, content, privacy: el('field-privacy').value, category_id: el('field-category').value, section_overrides })
+  });
+  const d = await r.json();
+  if (!d.ok) { showToast('Error: '+(d.message||''), true); setProdStage('content_ready'); }
+}
+
+async function regenerateVideo() {
+  if (_prodStage!=='video_ready') return;
+  const content = getEditedContent();
+  _contentData = content;
+  const topic = el('topic-input').value.trim();
+  const section_overrides = collectSectionOverrides();
+  setProdStage('video_gen');
+  const vid=el('vid-player'); vid.pause(); vid.src='';
+  const r = await fetch('/api/preview/start', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ topic, content, privacy: el('field-privacy').value, category_id: el('field-category').value, section_overrides })
+  });
+  const d = await r.json();
+  if (!d.ok) { showToast('Error: '+(d.message||''), true); setProdStage('video_ready'); }
+}
+
+// ── Video Preview ─────────────────────────────────────────────────────────────
+let _lastVidFile = '';
+function updateVideoPreview(pv) {
+  if (!pv?.video_filename) return;
+  if (_lastVidFile===pv.video_filename) return;
+  _lastVidFile=pv.video_filename; _videoFilename=pv.video_filename;
+  el('vid-title').textContent   = pv.title||_contentData?.title||'—';
+  el('vid-keyword').textContent = pv.primary_keyword||_contentData?.primary_keyword||'—';
+  const fnEl = el('vid-filename');
+  fnEl.textContent = pv.video_filename;
+  fnEl.dataset.src = '/output/'+pv.video_filename;
+  const vid = el('vid-player');
+  vid.src='/output/'+pv.video_filename; vid.load();
+  el('vid-play-overlay').style.opacity='1';
+}
+
+function togglePlay() {
+  const vid=el('vid-player'), overlay=el('vid-play-overlay');
+  if (vid.paused) { vid.play().catch(()=>{}); overlay.style.opacity='0'; }
+  else { vid.pause(); overlay.style.opacity='1'; }
+}
+
+function downloadVid(e) {
+  e.preventDefault();
+  const src=el('vid-filename').dataset.src;
+  if (!src) return;
+  const a=document.createElement('a');
+  a.href=src; a.download=src.split('/').pop(); a.click();
+}
+
+// ── Draft Save ────────────────────────────────────────────────────────────────
+async function saveDraft() {
+  const content = getEditedContent();
+  const topic   = el('topic-input').value.trim();
+  const r = await fetch('/api/saves', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ topic, content, settings:{ privacy:el('field-privacy').value, category_id:el('field-category').value }, video_filename:_videoFilename||null })
+  });
+  const d = await r.json();
+  if (d.ok) { showToast('Draft saved'); loadDrafts(); }
+  else showToast('Error: '+(d.message||''), true);
+}
+
+// ── Drafts List ───────────────────────────────────────────────────────────────
+async function loadDrafts() {
+  try {
+    const r = await fetch('/api/saves');
+    const list = await r.json();
+    renderDrafts(list);
+  } catch(_){}
+}
+
+function renderDrafts(list) {
+  const container = el('drafts-list');
+  el('draft-count').textContent = list.length ? list.length : '';
+  if (!list.length) {
+    container.innerHTML='<div style="color:var(--muted);font-size:11px;padding:8px 0;text-align:center;">No drafts yet</div>';
+    return;
+  }
+  container.innerHTML = list.slice().reverse().map(s=>{
+    const title = s.content?.title||s.topic||s.id.slice(0,8);
+    const dt    = new Date(s.created_at);
+    const dateStr = `${dt.getDate()} ${MONTHS[dt.getMonth()]}`;
+    return `
+    <div class="draft-item">
+      <div class="draft-info">
+        <div class="draft-title">${escHtml(title)}</div>
+        <div class="draft-sub">${escHtml(dateStr)}${s.topic?' · '+escHtml(s.topic.slice(0,25)):''}</div>
+      </div>
+      <div class="draft-actions">
+        <button class="btn btn-sm btn-ghost" onclick="loadDraft('${escHtml(s.id)}')" title="Load & Edit">&#8599;</button>
+        <button class="btn btn-sm btn-green" disabled title="Upload disabled" style="opacity:0.4;cursor:not-allowed;">&#9654;</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteDraft('${escHtml(s.id)}')" title="Delete">&#10005;</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function loadDraft(id) {
+  const r=await fetch('/api/saves');
+  const list=await r.json();
+  const s=list.find(x=>x.id===id);
+  if (!s) return;
+  el('topic-input').value=s.topic||'';
+  _contentData=s.content||{};
+  populateSections(_contentData);
+  fillMetaFields(_contentData);
+  if (s.settings?.privacy)     el('field-privacy').value=s.settings.privacy;
+  if (s.settings?.category_id) el('field-category').value=s.settings.category_id;
+  setProdStage('content_ready');
+  el('prod-panel').scrollTop=0;
+  // Switch to production tab
+  document.querySelectorAll('.tab-btn')[0].click();
+  showToast('Draft loaded — edit and generate video');
+}
+
+async function deleteDraft(id) {
+  if (!confirm('Delete this draft?')) return;
+  await fetch('/api/saves/'+id, {method:'DELETE'});
+  loadDrafts();
+}
+
+// ── Videos List ───────────────────────────────────────────────────────────────
+async function loadVideosList() {
+  try {
+    const r=await fetch('/api/videos');
+    if (!r.ok) return;
+    const videos=await r.json();
+    renderVideosList(videos);
+    el('yayinlar-badge').textContent=videos.length+' VIDEOS';
+    el('videos-badge').textContent=videos.length+' VIDEOS';
+    if (videos.length>0) {
+      const last=videos[0];
+      const dt=new Date(last.publishedAt);
+      el('stat-last').textContent=`${dt.getDate()} ${MONTHS[dt.getMonth()]}`;
+      el('stat-last-sub').textContent=`${last.viewCount} views`;
+    }
+  } catch(_){}
+}
+
+function renderVideosList(videos) {
+  const cont=el('videos-list');
+  if (!videos.length) {
+    cont.innerHTML='<div style="color:var(--muted);font-size:11px;padding:8px 0;text-align:center;">No videos found</div>';
+    return;
+  }
+  cont.innerHTML=videos.map(v=>{
+    const dt=new Date(v.publishedAt);
+    return `
+    <a class="video-item" href="${escHtml(v.url)}" target="_blank">
+      <div class="video-thumb-wrap"><img src="${escHtml(v.thumbnail)}" alt="" loading="lazy"></div>
+      <div class="video-item-info">
+        <div class="video-item-title">${escHtml(v.title)}</div>
+        <div class="video-item-meta">${dt.getDate()} ${MONTHS[dt.getMonth()]} ${dt.getFullYear()}</div>
+        <div class="video-item-stats">${fmtNum(v.viewCount)} views · ${fmtNum(v.likeCount)} likes</div>
+      </div>
+    </a>`;
+  }).join('');
+}
+
+// ── Publish Modal ─────────────────────────────────────────────────────────────
+function openPublishModal() {
+  if (_prodStage!=='video_ready') return;
+  const c=getEditedContent();
+  el('pub-title').textContent   = c.title||'—';
+  el('pub-yt-title').textContent= c.youtube_title||'—';
+  el('pub-keyword').textContent = c.primary_keyword||'—';
+  el('pub-desc').textContent    = c.seo_description||'—';
+  el('pub-tags').innerHTML=(c.hashtags||[]).map(h=>`<span style="background:var(--border);color:#a1a1aa;font-size:8px;padding:1px 5px;margin-right:2px;">${escHtml(h)}</span>`).join('');
+  const pubVid=el('pub-video');
+  if (_videoFilename && pubVid.dataset.src!=='/output/'+_videoFilename) {
+    pubVid.src='/output/'+_videoFilename; pubVid.dataset.src=pubVid.src; pubVid.load();
+    el('pub-play-overlay').style.opacity='1';
+  }
+  el('pub-privacy').value=el('field-privacy').value;
+  selectPubTime('now');
+  el('pub-modal-overlay').classList.add('open');
+}
+
+function closePubModal() { el('pub-modal-overlay').classList.remove('open'); el('pub-video').pause(); }
+function closePubIfOutside(e) { if(e.target===el('pub-modal-overlay')) closePubModal(); }
+function togglePubPlay() {
+  const vid=el('pub-video'), overlay=el('pub-play-overlay');
+  if (vid.paused) { vid.play().catch(()=>{}); overlay.style.opacity='0'; }
+  else { vid.pause(); overlay.style.opacity='1'; }
+}
+function selectPubTime(mode) {
+  _pubTimeMode=mode;
+  el('pub-opt-now').classList.toggle('selected', mode==='now');
+  el('pub-opt-later').classList.toggle('selected', mode==='later');
+  el('pub-schedule-fields').style.display=mode==='later'?'':'none';
+}
+
+async function confirmPublish() {
+  const btn=el('btn-pub-confirm');
+  btn.disabled=true; btn.textContent='Uploading…';
+  let publish_at=null;
+  if (_pubTimeMode==='later') {
+    const date=el('pub-date').value.trim(), time=el('pub-time').value.trim();
+    if (!date||!time) { showToast('Enter date and time', true); btn.disabled=false; btn.textContent='CONFIRM & UPLOAD'; return; }
+    publish_at=`${date} ${time}`;
+  }
+  const r=await fetch('/api/preview/confirm', {method:'POST'});
+  const d=await r.json();
+  btn.disabled=false; btn.textContent='CONFIRM & UPLOAD';
+  if (d.ok) {
+    closePubModal(); setProdStage('uploading'); showToast('Upload started!');
+    if (_pubTimeMode==='later' && publish_at) {
+      const date=el('pub-date').value.trim(), time=el('pub-time').value.trim();
+      await fetch('/api/schedules', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ label:(el('field-yt-title').value||'Scheduled').slice(0,30), time, date, topic:el('topic-input').value.trim() })});
+      loadSchedules();
+    }
+  } else showToast('Error: '+(d.message||''), true);
+}
+
+// ── SSE Logs ──────────────────────────────────────────────────────────────────
+function startSSE() {
+  if (_sse) { try{_sse.close();}catch(_){} }
+  _sse=new EventSource('/api/logs/stream');
+  const box=el('log-box');
+  _sse.onmessage=(e)=>{
+    try {
+      const entry=JSON.parse(e.data);
+      const div=document.createElement('div');
+      div.className='log-'+(entry.l||'INFO');
+      div.textContent=`${entry.t}  ${entry.m}`;
+      box.appendChild(div);
+      if (box.children.length>300) box.removeChild(box.firstChild);
+      box.scrollTop=box.scrollHeight;
+    } catch(_){}
+  };
+  _sse.onerror=()=>{ setTimeout(startSSE, 5000); };
+}
+
+// ── Scheduler ─────────────────────────────────────────────────────────────────
+function updateSchedulerCard(running, ni) {
+  const lbl=el('sched-status-label'), inf=el('sched-next-info'), btn=el('btn-sched-toggle');
+  if (running) {
+    lbl.innerHTML='<span class="dot dot-green" style="margin-right:5px;vertical-align:middle;"></span><span style="color:var(--green);">ACTIVE</span>';
+    btn.textContent='Stop'; btn.className='btn btn-danger btn-sm';
+  } else {
+    lbl.innerHTML='<span class="dot dot-muted" style="margin-right:5px;vertical-align:middle;"></span><span style="color:var(--muted);">STOPPED</span>';
+    btn.textContent='Start'; btn.className='btn btn-green btn-sm';
+  }
+  if (ni&&ni.time&&ni.time!=='--:--') {
+    const prefix=ni.date?ni.date+' ':'Daily ';
+    inf.textContent=`Next: ${prefix}${ni.time}`;
+  } else inf.textContent='—';
+}
+
+async function toggleScheduler() {
+  const endpoint=_schedRunning?'/api/scheduler/stop':'/api/scheduler/start';
+  await fetch(endpoint, {method:'POST'});
+  setTimeout(pollStatus, 300);
+}
+
+// ── Schedules ─────────────────────────────────────────────────────────────────
+async function loadSchedules() {
+  try {
+    const r=await fetch('/api/schedules');
+    const list=await r.json();
+    renderSchedules(list);
+    const def=list.find(s=>!s.date);
+    if (def&&def.time) { const [h,m]=def.time.split(':'); el('sched-hour').value=h; el('sched-minute').value=m; }
+  } catch(_){}
+}
+
+function renderSchedules(list) {
+  _calSchedules=list;
+  const cont=el('schedules-list'), badge=el('takvim-badge');
+  const enabled=list.filter(s=>s.enabled).length;
+  badge.textContent=`${enabled} SCHEDULED`;
+  badge.className=enabled>0?'panel-badge pb-accent':'panel-badge pb-muted';
+  if (!list.length) { cont.innerHTML='<div style="color:var(--muted);font-size:11px;padding:12px 0;text-align:center;">No schedules</div>'; return; }
+  cont.innerHTML=list.map(s=>`
+    <div class="sched-item ${s.enabled?'':'sched-disabled'}">
+      <span class="sched-time">${escHtml(s.time)}</span>
+      <div class="sched-info">
+        <div class="sched-label">${escHtml(s.label||s.id.slice(0,8))}</div>
+        <div class="sched-sub">${s.date?escHtml(s.date):'Daily'}${s.topic?' · '+escHtml(s.topic.slice(0,30)):''}</div>
+        ${_cachedChannels.length>0?`<select class="f-select" style="margin-top:4px;font-size:10px;" data-sid="${escHtml(s.id)}" onchange="updateScheduleChannel(this.dataset.sid,this.value)"><option value="">Default channel</option>${_channelOptions(s.channel_id)}</select>`:''}
+      </div>
+      <div class="sched-actions">
+        <button class="sched-btn" onclick="editSchedule('${escHtml(s.id)}')" title="Edit">&#9998;</button>
+        <button class="sched-btn" onclick="toggleScheduleItem('${escHtml(s.id)}')" title="${s.enabled?'Disable':'Enable'}">${s.enabled?'&#9646;&#9646;':'&#9654;'}</button>
+        <button class="sched-btn del" onclick="deleteSchedule('${escHtml(s.id)}')" title="Delete">&#10005;</button>
+      </div>
+    </div>`).join('');
+}
+
+function openModal(id, data) {
+  el('modal-title').textContent=id?'Edit Schedule':'Add New Schedule';
+  el('modal-sched-id').value=id||'';
+  el('modal-label').value=data?.label||'';
+  el('modal-time').value=data?.time||'10:00';
+  el('modal-date').value=data?.date||'';
+  el('modal-topic').value=data?.topic||'';
+  el('modal-overlay').classList.add('open');
+  setTimeout(()=>el('modal-time').focus(), 50);
+}
+
+function closeModal() { el('modal-overlay').classList.remove('open'); }
+function closeModalIfOutside(e) { if(e.target===el('modal-overlay')) closeModal(); }
+
+async function saveSchedule() {
+  const id=el('modal-sched-id').value;
+  const label=el('modal-label').value.trim();
+  const time=el('modal-time').value.trim();
+  const date=el('modal-date').value.trim()||null;
+  const topic=el('modal-topic').value.trim();
+  if (!time.match(/^\d{1,2}:\d{2}$/)) { showToast('Time format: HH:MM', true); return; }
+  const normalTime=time.split(':').map((x,i)=>i===0?x.padStart(2,'0'):x).join(':');
+  const body={label, time:normalTime, date, topic};
+  const url=id?`/api/schedules/${id}`:'/api/schedules';
+  const method=id?'PUT':'POST';
+  const r=await fetch(url, {method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  const d=await r.json();
+  if (d.ok) { closeModal(); loadSchedules(); showToast('Schedule saved'); }
+  else showToast('Error: '+(d.message||''), true);
+}
+
+async function editSchedule(id) {
+  const r=await fetch('/api/schedules');
+  const list=await r.json();
+  const s=list.find(x=>x.id===id);
+  if (s) openModal(id, s);
+}
+
+async function deleteSchedule(id) {
+  if (!confirm('Delete this schedule?')) return;
+  await fetch('/api/schedules/'+id, {method:'DELETE'});
+  loadSchedules();
+}
+
+async function toggleScheduleItem(id) {
+  await fetch('/api/schedules/'+id, {method:'PATCH'});
+  loadSchedules();
+}
+
+async function saveDefaultTime() {
+  const h=String(el('sched-hour').value||'10').padStart(2,'0');
+  const m=String(el('sched-minute').value||'00').padStart(2,'0');
+  const time=`${h}:${m}`;
+  const r=await fetch('/api/schedules');
+  const list=await r.json();
+  const def=list.find(s=>!s.date);
+  if (!def) {
+    await fetch('/api/schedules', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({label:'Default', time, date:null, topic:''})});
+  } else {
+    await fetch('/api/schedules/'+def.id, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({...def, time})});
+  }
+  loadSchedules(); showToast('Default upload time: '+time);
+}
+
+// ── Calendar ──────────────────────────────────────────────────────────────────
+function calNav(dir) {
+  _calMonth+=dir;
+  if (_calMonth>11) { _calMonth=0; _calYear++; }
+  if (_calMonth<0)  { _calMonth=11; _calYear--; }
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const MONTH_NAMES=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  el('cal-month-label').textContent=`${MONTH_NAMES[_calMonth]} ${_calYear}`;
+  const today=new Date();
+  const firstDay=new Date(_calYear, _calMonth, 1);
+  const totalDays=new Date(_calYear, _calMonth+1, 0).getDate();
+  let startOffset=(firstDay.getDay()+6)%7;
+  const schedMap={};
+  _calSchedules.forEach(s=>{ if(s.date){const d=s.date.slice(0,10); if(!schedMap[d]) schedMap[d]=[]; schedMap[d].push(s);} });
+  const grid=el('cal-grid');
+  grid.innerHTML='';
+  for (let i=0;i<startOffset;i++) grid.insertAdjacentHTML('beforeend','<div></div>');
+  for (let d=1;d<=totalDays;d++) {
+    const dateStr=`${_calYear}-${String(_calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday=(d===today.getDate()&&_calMonth===today.getMonth()&&_calYear===today.getFullYear());
+    const scheds=schedMap[dateStr]||[];
+    const hasSched=scheds.length>0;
+    grid.insertAdjacentHTML('beforeend',`<div onclick="calSelectDay('${dateStr}')"
+         style="padding:4px 2px;text-align:center;cursor:pointer;position:relative;
+                background:${isToday?'var(--accent)':hasSched?'#1a120a':'var(--card)'};
+                border:1px solid ${isToday?'var(--accent)':hasSched?'#92400e':'var(--border)'};
+                color:${isToday?'#000':hasSched?'var(--accent)':'#a1a1aa'};
+                font-size:11px;font-weight:${isToday||hasSched?'700':'400'};"
+         title="${hasSched?scheds.map(s=>s.label||s.time).join(', '):''}">
+      ${d}${hasSched?`<div style="width:4px;height:4px;border-radius:50%;background:${isToday?'#000':'var(--accent)'};margin:1px auto 0;"></div>`:''}
+    </div>`);
+  }
+  el('cal-day-detail').innerHTML='';
+}
+
+function calSelectDay(dateStr) {
+  const scheds=_calSchedules.filter(s=>s.date&&s.date.slice(0,10)===dateStr);
+  const detail=el('cal-day-detail');
+  if (!scheds.length) { detail.innerHTML=`<div style="color:var(--muted);font-size:11px;text-align:center;padding:8px 0;">${dateStr} — no scheduled uploads</div>`; return; }
+  detail.innerHTML=`
+    <div style="color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">${dateStr}</div>
+    ${scheds.map(s=>`
+      <div class="sched-item ${s.enabled?'':'sched-disabled'}">
+        <span class="sched-time">${escHtml(s.time)}</span>
+        <div class="sched-info">
+          <div class="sched-label">${escHtml(s.label||s.id.slice(0,8))}</div>
+          <div class="sched-sub">${s.topic?escHtml(s.topic.slice(0,40)):'—'}</div>
+        </div>
+        <div class="sched-actions"><button class="sched-btn del" onclick="deleteSchedule('${escHtml(s.id)}')" title="Delete">&#10005;</button></div>
+      </div>`).join('')}`;
+}
+
+// ── Channel ───────────────────────────────────────────────────────────────────
+async function loadChannel() {
+  try {
+    const r=await fetch('/api/channel');
+    if (!r.ok) return;
+    const d=await r.json();
+    if (d.error) return;
+    setStatNum('stat-views',  fmtNum(d.viewCount), 'total');
+    setStatNum('stat-subs',   d.subscriberCount,   'total');
+    setStatNum('stat-videos', d.videoCount,         'published');
+    loadVideosList();
+  } catch(_){}
+}
+
+function setStatNum(id, val, sub) {
+  const e=el(id); e.textContent=val;
+  e.classList.remove('skeleton'); e.style.height=''; e.style.width='';
+  el(id+'-sub').textContent=sub;
+}
+
+// ── Settings ──────────────────────────────────────────────────────────────────
+function toggleSettingsSection(hdr) {
+  hdr.classList.toggle('open');
+  const body=hdr.nextElementSibling;
+  body.classList.toggle('open');
+}
+
+function updateContentProviderUI() {
+  const p=el('s-content-provider').value;
+  const hints={claude:'claude-sonnet-4-6', openai:'gpt-4o', gemini:'gemini-1.5-pro'};
+  el('s-content-model').placeholder=hints[p]||'model name';
+}
+
+function updateTTSProviderUI() {
+  const enabled=el('s-tts-enabled').checked;
+  el('tts-settings-wrap').style.display=enabled?'':'none';
+  if (!enabled) return;
+  const p=el('s-tts-provider').value;
+  el('tts-key-row').style.display=(p==='edge'||p==='disabled')?'none':'';
+  el('tts-voiceid-row').style.display=p==='elevenlabs'?'':'none';
+  el('tts-openai-voice-row').style.display=p==='openai'?'':'none';
+}
+
+function updateStockProviderUI() {
+  const enabled=el('s-stock-enabled').checked;
+  el('stock-settings-wrap').style.display=enabled?'':'none';
+  if (!enabled) return;
+  const p=el('s-stock-provider').value;
+  el('stock-pexels-row').style.display=p==='pexels'?'':'none';
+  el('stock-pixabay-row').style.display=p==='pixabay'?'':'none';
+  el('stock-local-row').style.display=p==='local'?'':'none';
+}
+
+async function loadSettings() {
+  loadChannels();
+  try {
+    const r=await fetch('/api/settings/raw');
+    if (!r.ok) return;
+    const s=await r.json();
+    el('settings-badge').textContent='LOADED';
+
+    // Channel
+    el('s-channel-cta').value   = s.channel?.cta_text||'';
+    el('s-channel-accent').value= s.channel?.accent_color||'#d97706';
+    el('s-channel-accent-hex').value= s.channel?.accent_color||'#d97706';
+    el('s-channel-accent').addEventListener('input', ()=>el('s-channel-accent-hex').value=el('s-channel-accent').value);
+    el('s-channel-accent-hex').addEventListener('change', ()=>{ const v=el('s-channel-accent-hex').value; if(/^#[0-9a-fA-F]{6}$/.test(v)) el('s-channel-accent').value=v; });
+
+    // Content
+    el('s-content-provider').value = s.content?.provider||'claude';
+    el('s-content-key').value      = s.content?.api_key||'';
+    el('s-content-model').value    = s.content?.model||'';
+    el('s-content-prompt').value   = s.content?.system_prompt||'';
+    el('s-content-tokens').value   = s.content?.max_tokens||1200;
+    updateContentProviderUI();
+
+    // TTS
+    el('s-tts-enabled').checked    = !!(s.tts?.enabled);
+    el('s-tts-provider').value     = s.tts?.provider||'elevenlabs';
+    el('s-tts-key').value          = s.tts?.api_key||'';
+    el('s-tts-voiceid').value      = s.tts?.voice_id||'';
+    el('s-tts-openai-voice').value = s.tts?.openai_voice||'nova';
+    el('s-tts-vol').value          = s.tts?.volume??0.88;
+    el('s-tts-vol-val').textContent= parseFloat(s.tts?.volume??0.88).toFixed(2);
+    updateTTSProviderUI();
+
+    // Stock video
+    el('s-stock-enabled').checked = !!(s.stock_video?.enabled);
+    el('s-stock-provider').value  = s.stock_video?.provider||'pexels';
+    el('s-stock-pexels').value    = s.stock_video?.pexels_api_key||'';
+    el('s-stock-pixabay').value   = s.stock_video?.pixabay_api_key||'';
+    el('s-stock-local').value     = s.stock_video?.local_folder||'';
+    const ov=s.video?.dark_overlay??0.55;
+    el('s-stock-overlay').value   = ov;
+    el('s-stock-overlay-val').textContent=Math.round(ov*100)+'%';
+    updateStockProviderUI();
+
+    // Timing
+    const sec=s.video?.sections||{};
+    ['hook','title','fact','detail','closing','cta'].forEach(k=>{
+      const inp=el('s-dur-'+k);
+      if (inp) inp.value=sec[k]?.duration??{hook:3.5,title:3.5,fact:7,detail:7,closing:4,cta:3}[k];
+    });
+    const mv=s.video?.music_volume??0.30;
+    el('s-music-vol').value=mv; el('s-music-vol-val').textContent=Math.round(mv*100)+'%';
+    const mtv=s.tts?.music_volume_with_tts??0.10;
+    el('s-music-tts-vol').value=mtv; el('s-music-tts-vol-val').textContent=Math.round(mtv*100)+'%';
+
+    // Upload
+    el('s-upload-hour').value    = s.upload?.hour??10;
+    el('s-upload-minute').value  = s.upload?.minute??0;
+    el('s-upload-privacy').value = s.upload?.privacy||'public';
+
+  } catch(e) { el('settings-badge').textContent='ERROR'; }
+}
+
+async function saveSettings() {
+  const btn=document.querySelector('.settings-save-bar .btn-primary');
+  btn.disabled=true; btn.textContent='Saving…';
+  const result=el('settings-save-result');
+
+  const sections={};
+  ['hook','title','fact','detail','closing','cta'].forEach(k=>{
+    const v=parseFloat(el('s-dur-'+k)?.value);
+    if (!isNaN(v)) sections[k]={duration:v};
+  });
+
+  const data={
+    channel:{ cta_text:el('s-channel-cta').value, accent_color:el('s-channel-accent-hex').value||el('s-channel-accent').value },
+    content:{ provider:el('s-content-provider').value, api_key:el('s-content-key').value, model:el('s-content-model').value, system_prompt:el('s-content-prompt').value, max_tokens:parseInt(el('s-content-tokens').value)||1200 },
+    tts:{ enabled:el('s-tts-enabled').checked, provider:el('s-tts-provider').value, api_key:el('s-tts-key').value, voice_id:el('s-tts-voiceid').value, openai_voice:el('s-tts-openai-voice').value, volume:parseFloat(el('s-tts-vol').value), music_volume_with_tts:parseFloat(el('s-music-tts-vol').value) },
+    stock_video:{ enabled:el('s-stock-enabled').checked, provider:el('s-stock-provider').value, pexels_api_key:el('s-stock-pexels').value, pixabay_api_key:el('s-stock-pixabay').value, local_folder:el('s-stock-local').value },
+    video:{ dark_overlay:parseFloat(el('s-stock-overlay').value), music_volume:parseFloat(el('s-music-vol').value), sections },
+    upload:{ hour:parseInt(el('s-upload-hour').value)||10, minute:parseInt(el('s-upload-minute').value)||0, privacy:el('s-upload-privacy').value },
+  };
+
+  try {
+    const r=await fetch('/api/settings', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+    const d=await r.json();
+    btn.disabled=false; btn.textContent='SAVE ALL SETTINGS';
+    if (d.ok) { result.style.color='var(--green)'; result.textContent='Settings saved successfully'; showToast('Settings saved'); }
+    else { result.style.color='var(--red)'; result.textContent=d.message||'Error saving'; showToast('Error: '+d.message, true); }
+  } catch(e) {
+    btn.disabled=false; btn.textContent='SAVE ALL SETTINGS';
+    result.style.color='var(--red)'; result.textContent='Connection error';
+    showToast('Connection error', true);
+  }
+  setTimeout(()=>result.textContent='', 4000);
+}
+
+async function testProvider(type) {
+  const resultEl=el('test-result-'+type);
+  resultEl.className='test-result'; resultEl.textContent='Testing…';
+  try {
+    const r=await fetch('/api/settings/test-provider', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({type})});
+    const d=await r.json();
+    resultEl.className='test-result '+(d.ok?'test-ok':'test-err');
+    resultEl.textContent=d.message||(d.ok?'Connected':'Failed');
+  } catch(e) { resultEl.className='test-result test-err'; resultEl.textContent='Connection error'; }
+}
+
+// ─── Channel Management ───────────────────────────────────────────────────────
+// NOTE: escHtml and fmtNum are already defined in this file — do NOT redefine
+let _oauthPollTimer = null;
+
+function renderChannelsList(channels) {
+  const el2 = document.getElementById('channels-list');
+  if (!channels || channels.length === 0) {
+    el2.innerHTML = '<div style="background:var(--bg);border:1px dashed var(--border);padding:14px;text-align:center;color:var(--muted);font-size:11px;">Henüz bağlı kanal yok.</div>';
+    return;
+  }
+  el2.innerHTML = channels.map(ch => `
+    <div style="background:var(--bg);border:1px solid var(--border);padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+      ${ch.thumbnail ? `<img src="${escHtml(ch.thumbnail)}" style="width:36px;height:36px;border-radius:50%;flex-shrink:0;" onerror="this.style.display='none'">` : '<div style="width:36px;height:36px;border-radius:50%;background:var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;">🎬</div>'}
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(ch.name)}</div>
+        ${ch.handle ? `<div style="font-size:10px;color:var(--accent);">${escHtml(ch.handle)}</div>` : ''}
+        <div style="font-size:10px;color:var(--muted);">${fmtNum(ch.subscriber_count)} abone · ${fmtNum(ch.video_count)} video</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="color:#ef4444;border-color:#3f3f46;flex-shrink:0;" onclick="disconnectChannel('${escHtml(ch.id)}','${escHtml(ch.name)}')">Bağlantıyı Kes</button>
+    </div>
+  `).join('');
+}
+
+let _cachedChannels = [];
+
+function renderHeaderChannels(channels) {
+  const hdr = document.getElementById('header-channels');
+  if (!hdr) return;
+  if (!channels || channels.length === 0) {
+    hdr.innerHTML = '<span style="color:var(--muted);font-size:11px;">no channel connected</span>';
+    return;
+  }
+  hdr.innerHTML = channels.map((ch, i) => `
+    ${i > 0 ? '<span class="strip-sep" style="font-size:12px;">|</span>' : ''}
+    <div style="display:flex;align-items:center;gap:6px;">
+      ${ch.thumbnail
+        ? `<img src="${escHtml(ch.thumbnail)}" style="width:22px;height:22px;border-radius:50%;object-fit:cover;border:1px solid var(--border);" onerror="this.style.display='none'">`
+        : '<div style="width:22px;height:22px;border-radius:50%;background:var(--border);flex-shrink:0;"></div>'}
+      <span style="color:#e4e4e7;font-size:12px;font-weight:500;white-space:nowrap;">${escHtml(ch.name)}</span>
+    </div>
+  `).join('');
+}
+
+function loadChannels() {
+  fetch('/api/channels')
+    .then(r => r.json())
+    .then(data => {
+      _cachedChannels = data;
+      renderChannelsList(data);
+      renderHeaderChannels(data);
+      if (typeof loadSchedules === 'function') loadSchedules();
+    })
+    .catch(() => {});
+}
+
+function togglePlatformPicker(e) {
+  e.stopPropagation();
+  const p = document.getElementById('platform-picker');
+  const open = p.style.display !== 'none';
+  p.style.display = open ? 'none' : 'block';
+  if (!open) {
+    const close = () => { p.style.display = 'none'; document.removeEventListener('click', close); };
+    setTimeout(() => document.addEventListener('click', close), 0);
+  }
+}
+
+function connectChannel() {
+  document.getElementById('platform-picker').style.display = 'none';
+  if (_oauthPollTimer) { clearInterval(_oauthPollTimer); _oauthPollTimer = null; }
+  document.getElementById('oauth-error-msg').style.display = 'none';
+  fetch('/api/channels/connect', {method:'POST'})
+    .then(r => r.json())
+    .then(data => {
+      if (!data.ok) {
+        showOAuthError(data.message);
+        return;
+      }
+      showOAuthPending(true);
+      _oauthPollTimer = setInterval(pollOAuthStatus, 2000);
+    })
+    .catch(e => showOAuthError(String(e)));
+}
+
+function pollOAuthStatus() {
+  fetch('/api/channels/connect/status')
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === 'done') {
+        clearInterval(_oauthPollTimer);
+        _oauthPollTimer = null;
+        showOAuthPending(false);
+        loadChannels();
+      } else if (data.status === 'error') {
+        clearInterval(_oauthPollTimer);
+        _oauthPollTimer = null;
+        showOAuthPending(false);
+        showOAuthError(data.error || 'Bağlantı hatası');
+      }
+    })
+    .catch(() => {});
+}
+
+function showOAuthPending(show) {
+  document.getElementById('oauth-pending-msg').style.display = show ? 'flex' : 'none';
+}
+
+function showOAuthError(msg) {
+  const errEl = document.getElementById('oauth-error-msg');
+  errEl.textContent = '❌ ' + msg;
+  errEl.style.display = 'block';
+}
+
+function disconnectChannel(channelId, channelName) {
+  if (!confirm(`"${channelName}" kanalının bağlantısı kesilsin mi?`)) return;
+  fetch('/api/channels/' + channelId, {method:'DELETE'})
+    .then(r => r.json())
+    .then(() => loadChannels())
+    .catch(() => {});
+}
+
+function _channelOptions(selectedId) {
+  return _cachedChannels.map(ch =>
+    `<option value="${escHtml(ch.id)}" ${ch.id === selectedId ? 'selected' : ''}>${escHtml(ch.name)}</option>`
+  ).join('');
+}
+
+function updateScheduleChannel(scheduleId, channelId) {
+  fetch('/api/schedules/' + scheduleId, {
+    method: 'PATCH',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({channel_id: channelId || null}),
+  }).catch(() => {});
+}
+</script>
+</body>
+</html>

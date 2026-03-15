@@ -1,0 +1,9 @@
+anthropic>=0.25.0
+moviepy>=1.0.3
+google-auth>=2.0.0
+google-auth-oauthlib>=1.0.0
+google-api-python-client>=2.0.0
+schedule>=1.2.0
+pillow>=10.0.0
+numpy>=1.24.0
+python-dotenv>=1.0.0

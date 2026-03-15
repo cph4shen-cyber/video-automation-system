@@ -1,0 +1,53 @@
+# ─── Credentials & Secrets ────────────────────────────────────────────────────
+.env
+settings.json
+client_secrets.json
+youtube_token.json
+
+# OAuth tokens — channel-specific
+channels/
+channels.json
+
+# ─── Generated Content ────────────────────────────────────────────────────────
+output/
+stock_cache/
+music/
+
+# ─── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+
+# ─── IDE / Tool Dirs ──────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+.DS_Store
+.agents/
+.claude/
+.junie/
+.playwright-mcp/
+.superpowers/
+
+# ─── Skills (dev tooling) ─────────────────────────────────────────────────────
+skills/
+skills-lock.json
+
+# ─── Internal Planning Docs ───────────────────────────────────────────────────
+docs/superpowers/
+
+# ─── Runtime Data ─────────────────────────────────────────────────────────────
+*.log
+analytics.jsonl
+used_facts.txt
+saves.json
+schedules.json
+dashboard_out.txt
+
+# ─── Temp ─────────────────────────────────────────────────────────────────────
+temp_audio.m4a
+_tts_temp.wav

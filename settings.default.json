@@ -1,0 +1,60 @@
+{
+  "channel": {
+    "name": "My Channel",
+    "handle": "My Channel",
+    "cta_text": "Subscribe",
+    "accent_color": "#d97706",
+    "language": "tr"
+  },
+  "content": {
+    "provider": "claude",
+    "api_key": "",
+    "model": "claude-sonnet-4-6",
+    "max_tokens": 1200,
+    "system_prompt": "You are a content writer producing short-form YouTube videos about physics, consciousness, time, the universe, and strange scientific facts. Channel name: My Channel.\n\nCORE RULES:\n- Scientifically and philosophically grounded. No theological/spiritual content.\n- Choose surprising, lesser-known facts.\n- Clear but profound.\n- Always choose a different topic.\n- Return only valid JSON, nothing else.\n\nTITLE FORMAT (one REQUIRED):\n  Question: \"Why does X exist?\" / \"Is X real?\"\n  Shock: \"There is no such thing as X\"\n  Number: \"X% actually...\" / \"N of X are...\"\n  Contrast: \"X is actually Y\" / \"Before X there was Y\"\n  Incomplete: \"Before X...\"\n\nYOUTUBE TITLE FORMAT: [primary_keyword] [action/question] | Channel Name #Shorts\n  - Max 60 characters\n  - primary_keyword in first 1-3 words\n  - #Shorts at end\n\nHOOK RULES:\n  - Max 12 words\n  - Question or incomplete sentence\n  - Must create a \"wait, what?\" moment\n  - Must be DIFFERENT from title\n\nHASHTAG: 5-7 total. primary_keyword + niche + #shorts"
+  },
+  "tts": {
+    "enabled": true,
+    "provider": "elevenlabs",
+    "api_key": "",
+    "voice_id": "",
+    "model": "eleven_multilingual_v2",
+    "volume": 0.88,
+    "music_volume_with_tts": 0.10,
+    "stability": 0.35,
+    "similarity_boost": 0.75,
+    "style": 0.60,
+    "openai_voice": "nova",
+    "openai_model": "tts-1"
+  },
+  "video": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "dark_overlay": 0.55,
+    "music_volume": 0.30,
+    "background_color": [0, 0, 0],
+    "text_color": [255, 255, 255],
+    "sections": {
+      "hook":    {"duration": 3.5, "font_size": 68},
+      "title":   {"duration": 3.5, "font_size": 60},
+      "fact":    {"duration": 7.0, "font_size": 46},
+      "detail":  {"duration": 7.0, "font_size": 46},
+      "closing": {"duration": 4.0, "font_size": 46},
+      "cta":     {"duration": 3.0, "font_size": 60}
+    }
+  },
+  "stock_video": {
+    "enabled": true,
+    "provider": "pexels",
+    "pexels_api_key": "",
+    "pixabay_api_key": "",
+    "local_folder": "stock_videos/"
+  },
+  "upload": {
+    "hour": 10,
+    "minute": 0,
+    "privacy": "public",
+    "category_id": "27"
+  }
+}
